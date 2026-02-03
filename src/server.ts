@@ -1,6 +1,6 @@
 import { prisma } from "./lib/prisma"
 import app from "./app"
-const port = 3000
+const port = 5000
 
 const main=async()=>{
     try {
