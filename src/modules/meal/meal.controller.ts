@@ -8,10 +8,34 @@ const createMeal = async (req: Request, res: Response,next:NextFunction) => {
             throw new Error("user not found")
         }
         const result=await mealService.createMeal(req.body)
-        res.status(201).json(result)
+        res.status(201).json({message:"meal create sucessfully",result})
     } catch (e:any) {
+           e.customMessage=e.message || 'meal create fail'
             next(e)
     }
 }
 
-export const mealController={createMeal}
+const UpdateMeals = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        const id=req.params.id
+        const result=await mealService.UpdateMeals(req.body,id as string)
+        res.status(200).json({message:"meal update sucessfully",result})
+    } catch (e:any) {
+        e.customMessage='meal update fail'
+            next(e)
+    }
+}
+
+const DeleteMeals = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        const id=req.params.id
+        const result=await mealService.DeleteMeals(id as string)
+        res.status(200).json({message:"meal delete sucessfully",result})
+    } catch (e:any) {
+        e.customMessage=`${e.message}`
+         next(e)
+    }
+}
+
+
+export const mealController={createMeal,UpdateMeals,DeleteMeals}
