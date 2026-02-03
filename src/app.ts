@@ -3,6 +3,7 @@ import cors from 'cors'
 import { auth } from './lib/auth';
 import { toNodeHandler } from "better-auth/node";
 import { authRouter } from './modules/auth/auth.route';
+import { mealRouter } from './modules/meal/meal.route';
 import errorHandler from './middleware/globalErrorHandeller';
 import {  Notfound } from './middleware/notFound';
 
@@ -17,6 +18,9 @@ app.use(cors({
     origin:"http://localhost:3000",
     credentials:true
 }))
+// meal
+app.use("/api/provider/meals",mealRouter.router)
+
 
 
 app.use("/api/auth",authRouter.router)
