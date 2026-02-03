@@ -1,0 +1,23 @@
+model Order {
+  id         String          @id @default(uuid()) 
+  customerId String
+  providerId String
+  status     OrderStatus     @default(PLACED)
+  totalPrice BigInt 
+  quantity   BigInt 
+  address    String          @db.Text
+  createdAt  DateTime        @default(now())
+  // relationship
+  customer   User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("order")
+}
+
+enum OrderStatus {
+  PLACED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}

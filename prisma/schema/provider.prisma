@@ -1,0 +1,15 @@
+model ProviderProfile {
+  id             String      @id @default(uuid())
+  userId         String      @unique
+  restaurantName String   @db.VarChar(100)
+  address        String   @db.VarChar(200)
+  description    String?  @db.Text
+  image          String?  @db.VarChar(100)
+  
+  createdAt      DateTime @default(now())
+  // relationship
+  user   User @relation(fields: [userId], references: [id],onDelete: Cascade)
+  meals Meal[]
+  orders Order[]
+  @@map("providerprofile")
+}

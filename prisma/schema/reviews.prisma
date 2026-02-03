@@ -1,0 +1,12 @@
+model Review {
+  id         String      @id @default(uuid())
+  customerId String
+  mealId     String
+  rating     String   @db.VarChar(10)
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
+  // relationship
+  customer User @relation(fields: [customerId],references: [id],onDelete: Cascade)
+  meal Meal @relation(fields: [mealId],references: [id],onDelete: Cascade)
+  @@map("review")
+}

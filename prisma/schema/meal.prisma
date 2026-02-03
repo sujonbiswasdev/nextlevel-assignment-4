@@ -1,0 +1,18 @@
+model Meal {
+    id                String  @id @default(uuid())
+    name              String  @db.VarChar(100)
+    description       String? @db.Text
+    price             Float 
+    isAvailable       Boolean @default(true)
+    dietaryPreference String? @db.Text
+    providerId        String
+    categoryId        String
+
+    createdAt   DateTime        @default(now())
+    //   relationship
+    provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+    reviews     Review[]
+    category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    @@map("meal")
+}

@@ -1,0 +1,27 @@
+model User {
+  id        String      @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.Text
+  phone     String?  @db.VarChar(20)
+  role      Role    @default(Customer)
+  status    Status   @default(activate)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  // relationship
+   reviews Review[]
+  orders Order[]
+  provider ProviderProfile?
+  @@map("user")
+}
+
+enum Role {
+  Customer
+  Provider
+  Admin
+}
+
+enum Status {
+  activate
+  suspend
+}
