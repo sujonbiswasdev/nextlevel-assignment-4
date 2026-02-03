@@ -6,7 +6,7 @@ import { authRouter } from './modules/auth/auth.route';
 import { mealRouter } from './modules/meal/meal.route';
 import errorHandler from './middleware/globalErrorHandeller';
 import {  Notfound } from './middleware/notFound';
-
+import { providerRouter } from './modules/provider/provider.route';
 
 
 const app = express()
@@ -21,7 +21,8 @@ app.use(cors({
 // meal
 app.use("/api/provider/meals",mealRouter.router)
 
-
+// provider
+app.use("/api/auth/provider",providerRouter.router)
 
 app.use("/api/auth",authRouter.router)
 
