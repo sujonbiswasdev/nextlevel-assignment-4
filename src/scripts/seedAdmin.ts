@@ -21,9 +21,12 @@ const seedAdmin = async () => {
             },
         });
         if(data){
-            throw new Error("admin user signup sucessfully")
+            console.log('admin user created sucessfully')
+            return {message:"Admin user created successfully"};
+            
         }
-
+        console.log('Admin user created fail')
+        return "Admin user created fail";
     } catch (error: any) {
         console.log(error.message)
     }
