@@ -8,6 +8,7 @@ import errorHandler from './middleware/globalErrorHandeller';
 import {  Notfound } from './middleware/notFound';
 import { providerRouter } from './modules/provider/provider.route';
 import { OrderRouter } from './modules/order/order.route';
+import { CategoryRouter } from './modules/category/category.route';
 
 
 const app = express()
@@ -26,6 +27,13 @@ app.use("/api",mealRouter.router)
 app.use("/api",providerRouter.router)
 // order
 app.use("/api",OrderRouter.router)
+
+// category
+app.use("/api",CategoryRouter.router)
+
+
+// users
+app.use("/api",CategoryRouter.router)
 
 app.use("/api/auth",authRouter.router)
 
