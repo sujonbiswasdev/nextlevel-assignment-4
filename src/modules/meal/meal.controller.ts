@@ -7,7 +7,7 @@ const createMeal = async (req: Request, res: Response,next:NextFunction) => {
         if(!user){
             throw new Error("user not found")
         }
-        const result=await mealService.createMeal(req.body)
+        const result=await mealService.createMeal(req.body,user.id)
         res.status(201).json({message:"meal create sucessfully",result})
     } catch (e:any) {
            e.customMessage=e.message || 'meal create fail'

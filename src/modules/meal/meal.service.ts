@@ -1,10 +1,12 @@
 import { Meal } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 
-const createMeal=async(payload:{name:string,description:string,price:number,isAvailable:boolean,dietaryPreference?:string,providerId:string,categoryId:string})=>{
+const createMeal=async(data:{name:string,description:string,price:number,isAvailable:boolean,dietaryPreference?:string,categoryId:string},userid:string)=>{
+    const providerid=await prisma.user.findUniqueOrThrow({where:{id:userid},include:{provider:true}})
   return  await prisma.meal.create({
         data:{
-            ...payload  
+            ...data,
+            providerId:providerid.provider?.id as string
         }
     })
 

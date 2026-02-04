@@ -2,10 +2,13 @@ model Review {
   id         String      @id @default(uuid())
   customerId String
   mealId     String
+   parentId String?
   rating     String   @db.VarChar(10)
   comment    String?  @db.Text
   createdAt  DateTime @default(now())
   // relationship
+  parent   Review?  @relation("reviewsReply", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Review[] @relation("reviewsReply")
   customer User @relation(fields: [customerId],references: [id],onDelete: Cascade)
   meal Meal @relation(fields: [mealId],references: [id],onDelete: Cascade)
   @@map("review")
