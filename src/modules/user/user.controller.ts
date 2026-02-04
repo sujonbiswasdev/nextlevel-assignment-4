@@ -22,7 +22,7 @@ const UpdateUser = async (req: Request, res: Response, next: NextFunction) => {
         
         res.status(201).json({ sucess: true, message:result?.isActive ? 'user has been activated' : 'user has been suspend', result })
     } catch (e: any) {
-        e.Custommessage = e.message || "get all user fail"
+        e.Custommessage = e.message || "user update fail"
         next(e)
     }
 
