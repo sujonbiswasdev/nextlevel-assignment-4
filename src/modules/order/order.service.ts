@@ -48,45 +48,52 @@ const getUserOrder = async (userid: string) => {
 }
 
 const UpdateOrder = async (id: string, data: Partial<Order>, role: string) => {
+    console.log(role)
     const { status } = data;
-    if (role !== 'Provider') {
-        throw new Error("order update only Provider")
-    }
-
     const statusValue = ["PLACED", "PREPARING", "READY", "DELIVERED", "CANCELLED"]
     if (!statusValue.includes(status as string)) {
         throw new Error("please check your status")
     }
+    const existingOrder = await prisma.order.findUnique({ where: { id } })
 
-    const existingOrder = await prisma.order.findUnique({where:{id}})
-
-     if(existingOrder?.status==status){
+    if (existingOrder?.status == status) {
         throw new Error("Order status already up to date")
-     }
-    if (status == 'CANCELLED') {
-        const result = await prisma.order.update({
-            where: {
-                id
-            },
-            data: {
-                status
-            }
-        })
-        return result
-    } else {
-        const result = await prisma.order.update({
-            where: {
-                id
-            },
-            data: {
-                status
-            }
-        })
-        return result
+    }
+    if(role=='Customer' && status!=='CANCELLED'){
+        throw new Error("Customer can status change CANCELLED")
+    }
+     if (role == 'Customer' && status=='CANCELLED') {
+            const result = await prisma.order.update({
+                where: {
+                    id
+                },
+                data: {
+                    status
+                }
+            })
+            return result
     }
 
+    if(role=='Provider' && status==='CANCELLED'){
+        throw new Error("please check your role and status")
+    }
 
+    if (role == 'Provider') {
+        if (status == 'PLACED' || status == 'PREPARING' || status == 'READY' || status == 'DELIVERED') {
+            const result = await prisma.order.update({
+                where: {
+                    id
+                },
+                data: {
+                    status
+                }
+            })
+            return result
+        }
 
+    }
+
+   
 
 }
 

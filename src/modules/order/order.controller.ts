@@ -40,7 +40,7 @@ const UpdateOrder = async (req: Request, res: Response, next: NextFunction) => {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result = await ServiceOrder.UpdateOrder(req.params.id as string,req.body,users.role as string)
-        res.status(201).json({ sucess: true, message: "user order get sucessfully", result })
+        res.status(201).json({ sucess: true, message: "user order Update sucessfully", result })
     } catch (e: any) {
         e.Custommessage = e.message || "user order get fail"
         next(e)
