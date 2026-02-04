@@ -1,17 +1,16 @@
-import { NextFunction, Request, Response } from "express"
+import { Request, Response } from "express"
 import { authService } from "./auth.service"
 
-const getCurentUser=async(req:Request,res:Response,next:NextFunction)=>{
+const getCurentUser=async(req:Request,res:Response)=>{
     try {
-        const users = req.user
-        if (!users) {
-            res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        const user= req.user
+        if(!user){
+            throw new Error("user not found")
         }
-        const result =await authService.getCurentUser(users?.id as string)
+        const result =await authService.getCurentUser(user.id)
         res.status(200).json({sucess:true,message:"user get sucessfully",result})
-    } catch (e:any) {
-          e.customMessage=`${e.message}`
-         next(e)
+    } catch (error) {
+        res.status(400).json({sucess:false,message:"user get fail"})
     }
 }
 

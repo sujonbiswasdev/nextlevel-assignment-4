@@ -14,14 +14,7 @@ const createProvider=async(data: Omit<ProviderProfile, 'id' | 'createdAt' | 'use
 }
 
 const getAllProvider=async()=>{
-    const result = await prisma.providerProfile.findMany({
-        include:{
-            meals:true,
-            orders:true,
-            user:true
-            
-        }
-    })
+    const result = await prisma.providerProfile.findMany()
     return result
 }
 const getProviderWithMeals=async(id:string)=>{

@@ -3,11 +3,11 @@ import { mealService } from "./meal.service"
 
 const createMeal = async (req: Request, res: Response,next:NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
-           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        const user=req.user
+        if(!user){
+            throw new Error("user not found")
         }
-        const result=await mealService.createMeal(req.body,users.id as string)
+        const result=await mealService.createMeal(req.body)
         res.status(201).json({message:"meal create sucessfully",result})
     } catch (e:any) {
            e.customMessage=e.message || 'meal create fail'
