@@ -46,4 +46,22 @@ const DeleteMeals=async(mealid:string)=>{
     })
 
 }
-export const mealService={createMeal,UpdateMeals,DeleteMeals}
+
+const getAllmeals=async()=>{
+   return await prisma.meal.findMany()
+}
+
+const getSinglemeals=async(id:string)=>{
+   return await prisma.meal.findUniqueOrThrow({
+    where:{
+        id
+    }
+   })
+}
+export const mealService={
+    createMeal,
+    UpdateMeals,
+    DeleteMeals,
+    getAllmeals,
+    getSinglemeals
+}

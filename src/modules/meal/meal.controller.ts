@@ -37,5 +37,31 @@ const DeleteMeals = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
+const Getallmeals = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        
+        const result=await mealService.getAllmeals()
+        res.status(200).json({message:"get all meals sucessfully",result})
+    } catch (e:any) {
+        e.customMessage=`${e.message}`
+         next(e)
+    }
+}
 
-export const mealController={createMeal,UpdateMeals,DeleteMeals}
+const GetSignlemeals = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        
+        const result=await mealService.getSinglemeals(req.params.id as string)
+        res.status(200).json({message:"get signle meals sucessfully",result})
+    } catch (e:any) {
+        e.customMessage=`${e.message}`
+         next(e)
+    }
+}
+
+export const mealController={
+    createMeal,
+    UpdateMeals,
+    DeleteMeals,
+    Getallmeals,
+    GetSignlemeals}

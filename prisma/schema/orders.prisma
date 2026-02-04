@@ -3,8 +3,8 @@ model Order {
   customerId String
   providerId String
   status     OrderStatus     @default(PLACED)
-  totalPrice BigInt 
-  quantity   BigInt 
+  totalPrice Int 
+  quantity   Int 
   address    String          @db.Text
   createdAt  DateTime        @default(now())
   // relationship
