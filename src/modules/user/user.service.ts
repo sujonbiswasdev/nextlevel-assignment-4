@@ -19,7 +19,7 @@ const UpdateUser=async(id:string,role:string,data:Partial<User>)=>{
   throw new Error("status change only Admin")
  }
  if(curentUser.status==status){
-  throw new Error("user already up to date")
+  throw new Error("user status already up to date")
  }
  const statusValue=["activate","suspend"]
  if(!statusValue.includes(status as string)){
