@@ -1,13 +1,18 @@
 import { Meal } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 
-const createMeal=async(payload:{name:string,description:string,price:number,isAvailable:boolean,dietaryPreference?:string,providerId:string,categoryId:string})=>{
+const createMeal=async(payload:{name:string,description:string,price:number,isAvailable:boolean,dietaryPreference?:string,providerId:string,categoryId:string},userid:string)=>{
+
+    const existUser = await prisma.user.findUnique({where:{id:userid},include:{provider:true}})
+    if(!existUser || existUser.id!==userid){
+        throw new Error("you are not authorized")
+    }
   return  await prisma.meal.create({
         data:{
-            ...payload  
+            ...payload,
+            providerId:existUser.provider?.id as string  
         }
     })
-
 }
 
 const UpdateMeals=async(data:Partial<Meal>,mealid:string)=>{

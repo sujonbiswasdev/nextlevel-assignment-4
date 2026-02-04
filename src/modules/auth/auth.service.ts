@@ -4,6 +4,9 @@ const getCurentUser=async(id:string)=>{
      return await prisma.user.findUniqueOrThrow({
         where:{
             id
+        },
+        include:{
+            provider:true,
         }
     })
 }
