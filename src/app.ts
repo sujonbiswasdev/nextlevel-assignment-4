@@ -9,6 +9,7 @@ import {  Notfound } from './middleware/notFound';
 import { providerRouter } from './modules/provider/provider.route';
 import { OrderRouter } from './modules/order/order.route';
 import { CategoryRouter } from './modules/category/category.route';
+import { UserRouter } from './modules/user/user.route';
 
 
 const app = express()
@@ -33,7 +34,7 @@ app.use("/api",CategoryRouter.router)
 
 
 // users
-app.use("/api",CategoryRouter.router)
+app.use("/api",UserRouter.router)
 
 app.use("/api/auth",authRouter.router)
 

@@ -4,7 +4,6 @@ import { categoryService } from "./category.service"
 const CreateCategory = async (req: Request, res: Response,next:NextFunction) => {
     try {
           const users = req.user
-          console.log(users)
         if (!users) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
