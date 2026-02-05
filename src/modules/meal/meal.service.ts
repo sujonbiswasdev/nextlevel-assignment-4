@@ -1,5 +1,7 @@
+import { string } from 'better-auth';
 import { Meal } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
+import { MealWhereInput } from '../../../generated/prisma/models';
 
 const createMeal=async(data:{name:string,description:string,price:number,isAvailable:boolean,dietaryPreference?:string,categoryId:string},userid:string)=>{
     const providerid=await prisma.user.findUniqueOrThrow({where:{id:userid},include:{provider:true}})
@@ -49,14 +51,60 @@ const DeleteMeals=async(mealid:string)=>{
 
 }
 
-const getAllmeals=async()=>{
-   return await prisma.meal.findMany()
+const getAllmeals=async(data:{name:string,description:string,price:string,dietaryPreference:string},isAvailable:boolean)=>{
+     const andConditions:MealWhereInput[] = []
+    if(data){
+        andConditions.push({
+            OR:[
+                {
+                    name:{
+                        contains:data.name,
+                        mode:"insensitive"
+                    }
+                },
+                {
+                    description:{
+                        contains:data.description,
+                        mode:"insensitive"
+                    }
+                }
+            ]
+        })
+    }
+    if(typeof isAvailable==='boolean'){
+        andConditions.push({isAvailable:isAvailable})
+    }
+   return await prisma.meal.findMany({
+    where:{
+        AND:andConditions
+    },
+    include:{
+        provider:true
+    }
+    
+   })
 }
 
 const getSinglemeals=async(id:string)=>{
    return await prisma.meal.findUniqueOrThrow({
     where:{
         id
+    },
+    include:{
+        category:true,
+        provider:true,
+        reviews:{
+            where:{
+                parentId:null
+            },
+            include:{
+                replies:{
+                    include:{
+                        replies:true
+                    }
+                }
+            }
+        }
     }
    })
 }

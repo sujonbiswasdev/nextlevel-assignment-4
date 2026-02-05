@@ -2,7 +2,7 @@ model Review {
   id         String      @id @default(uuid())
   customerId String
   mealId     String
-   parentId String?
+  parentId String?
   rating     String   @db.VarChar(10)
   comment    String?  @db.Text
   createdAt  DateTime @default(now())

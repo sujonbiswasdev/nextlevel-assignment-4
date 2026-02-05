@@ -8,4 +8,8 @@ const router=Router()
 router.get("/admin/users",auth([Roles.Admin]),UserController.GetAllUsers)
 router.patch("/admin/users/:id",auth([Roles.Admin]),UserController.UpdateUser)
 
+router.get("/customer/profile/:id",auth([Roles.Customer]),UserController.getCustomerProfile)
+
+router.put("/customer/profile/:id",auth([Roles.Customer]),UserController.UpateCustomerProfile)
+router.delete("/customer/profile/:id",auth([Roles.Customer]),UserController.DeleteCustomerProfile)
 export const UserRouter={router}
