@@ -1,7 +1,7 @@
 import { Order } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 
-const CreateOrder = async (payload: Omit<Order, 'id' | 'createdAt' | 'customerId'>, customerId: string) => {
+const CreateOrder = async (provideid:string,payload: Omit<Order, 'id' | 'createdAt' | 'customerId'>, customerId: string) => {
     const existingUser = await prisma.user.findUniqueOrThrow({
         where: {
             id: customerId
@@ -17,7 +17,7 @@ const CreateOrder = async (payload: Omit<Order, 'id' | 'createdAt' | 'customerId
     const order = await prisma.order.create({
         data: {
             customerId,
-            providerId: payload.providerId,
+            providerId: provideid,
             status: payload.status,
             totalPrice: payload.totalPrice,
             quantity: payload.quantity,
@@ -99,10 +99,18 @@ const UpdateOrder = async (id: string, data: Partial<Order>, role: string) => {
 
 
 
+const getAllorder = async (role:string) => {
+    if (role !== 'Admin') {
+        throw new Error("view all order only Admin")
+    }
+    const result = await prisma.order.findMany()
+    return result
+}
 
 
 export const ServiceOrder = {
     CreateOrder,
     getUserOrder,
-    UpdateOrder
+    UpdateOrder,
+    getAllorder
 }

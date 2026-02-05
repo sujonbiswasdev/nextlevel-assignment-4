@@ -7,7 +7,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
         if (!users) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await ServiceOrder.CreateOrder(req.body, users?.id as string)
+        const result = await ServiceOrder.CreateOrder(req.params.id as string,req.body, users?.id as string)
         res.status(201).json({ sucess: true, message: "order create sucessfully", result })
     } catch (e: any) {
         e.Custommessage = e.message || "order create fail"
@@ -49,9 +49,26 @@ const UpdateOrder = async (req: Request, res: Response, next: NextFunction) => {
 
 }
 
+const getAllOrder = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const users = req.user
+        if (!users) {
+           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        }
+        const result = await ServiceOrder.getAllorder(users?.role as string)
+        res.status(201).json({ sucess: true, message: "get all order sucessfully", result })
+    } catch (e: any) {
+        e.Custommessage = e.message || " get all order fail"
+        next(e)
+
+    }
+
+}
+
 
 export const OrderController = {
     createOrder,
     getUserOrder,
-    UpdateOrder
+    UpdateOrder,
+    getAllOrder
 }
