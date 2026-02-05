@@ -10,7 +10,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
         const result = await ServiceOrder.CreateOrder(req.params.id as string,req.body, users?.id as string)
         res.status(201).json({ sucess: true, message: "order create sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || "order create fail"
+        e.Custommessage = "order create fail"
         next(e)
 
     }
@@ -26,7 +26,7 @@ const getUserOrder = async (req: Request, res: Response, next: NextFunction) => 
         const result = await ServiceOrder.getUserOrder(users?.id as string)
         res.status(201).json({ sucess: true, message: "user order get sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || "user order get fail"
+        e.Custommessage ="user order get fail"
         next(e)
 
     }
@@ -42,7 +42,7 @@ const UpdateOrder = async (req: Request, res: Response, next: NextFunction) => {
         const result = await ServiceOrder.UpdateOrder(req.params.id as string,req.body,users.role as string)
         res.status(201).json({ sucess: true, message: "user order Update sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || "user order get fail"
+        e.Custommessage = "user order get fail"
         next(e)
 
     }
@@ -58,7 +58,7 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction) => {
         const result = await ServiceOrder.getAllorder(users?.role as string)
         res.status(201).json({ sucess: true, message: "get all order sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || " get all order fail"
+        e.Custommessage =" get all order fail"
         next(e)
 
     }

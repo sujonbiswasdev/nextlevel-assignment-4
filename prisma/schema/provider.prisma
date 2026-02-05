@@ -7,6 +7,7 @@ model ProviderProfile {
   image          String?  @db.VarChar(100)
   
   createdAt      DateTime @default(now())
+  updatedAt  DateTime   @updatedAt
   // relationship
   user   User @relation(fields: [userId], references: [id],onDelete: Cascade)
   meals Meal[]

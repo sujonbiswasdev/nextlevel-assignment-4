@@ -6,13 +6,17 @@ model Meal {
     isAvailable       Boolean @default(true)
     dietaryPreference String? @db.Text
     providerId        String
+    userid            String
     categoryId        String
 
     createdAt   DateTime        @default(now())
+    updatedAt  DateTime   @updatedAt
     //   relationship
     provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
     reviews     Review[]
+    orders      Order[]
     category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    user User        @relation(fields: [userid], references: [id], onDelete: Cascade)
 
     @@map("meal")
 }

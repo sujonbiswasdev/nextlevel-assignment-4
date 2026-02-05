@@ -10,7 +10,7 @@ const createMeal = async (req: Request, res: Response, next: NextFunction) => {
         const result = await mealService.createMeal(req.body, user.id)
         res.status(201).json({ message: "meal create sucessfully", result })
     } catch (e: any) {
-        e.customMessage = e.message || 'meal create fail'
+        e.customMessage = 'meal create fail'
         next(e)
     }
 }
@@ -49,7 +49,7 @@ const Getallmeals = async (req: Request, res: Response, next: NextFunction) => {
         const result = await mealService.getAllmeals(req.query as any,isAvailable as boolean)
         res.status(200).json({ message: "get all meals sucessfully", result })
     } catch (e: any) {
-        e.customMessage = `${e.message}`
+        e.customMessage = `get all meals sucessfully`
         next(e)
     }
 }
@@ -60,7 +60,7 @@ const GetSignlemeals = async (req: Request, res: Response, next: NextFunction) =
         const result = await mealService.getSinglemeals(req.params.id as string)
         res.status(200).json({ message: "get signle meals sucessfully", result })
     } catch (e: any) {
-        e.customMessage = `${e.message}`
+        e.customMessage = `get signle meals fail`
         next(e)
     }
 }

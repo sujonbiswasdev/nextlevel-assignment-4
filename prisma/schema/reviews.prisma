@@ -3,9 +3,10 @@ model Review {
   customerId String
   mealId     String
   parentId String?
-  rating     String   @db.VarChar(10)
+  rating     Int
   comment    String?  @db.Text
-  createdAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt  DateTime   @updatedAt
   // relationship
   parent   Review?  @relation("reviewsReply", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Review[] @relation("reviewsReply")

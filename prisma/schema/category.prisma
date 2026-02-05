@@ -1,7 +1,11 @@
 model Category {
   id    String    @id @default(uuid()) 
+  adminId String
   name  String @unique @db.VarChar(150)
+  createdAt      DateTime @default(now())
+  updatedAt  DateTime   @updatedAt
   // relationship
   meals Meal[]
+  user User @relation(fields: [adminId],references: [id],onDelete: Cascade)
   @@map("categories")
 }

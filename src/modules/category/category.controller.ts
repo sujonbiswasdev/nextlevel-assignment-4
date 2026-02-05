@@ -10,7 +10,7 @@ const CreateCategory = async (req: Request, res: Response,next:NextFunction) => 
         const result=await categoryService.CreateCategory(req.body,users.role as string)
         res.status(201).json({message:"category create sucessfully",result})
     } catch (e:any) {
-           e.customMessage=e.message || 'category create fail'
+           e.customMessage='category create fail'
             next(e)
     }
 }
@@ -25,7 +25,7 @@ const getCategory = async (req: Request, res: Response,next:NextFunction) => {
         const result=await categoryService.getCategory(users.role as string)
         res.status(201).json({message:"category get sucessfully",result})
     } catch (e:any) {
-           e.customMessage=e.message || 'category get fail'
+           e.customMessage= 'category get fail'
             next(e)
     }
 }
@@ -53,7 +53,7 @@ const DeleteCategory = async (req: Request, res: Response,next:NextFunction) => 
         const result=await categoryService.DeleteCategory(req.params.id as string,users.role as string)
         res.status(201).json({message:"category delete sucessfully",result})
     } catch (e:any) {
-           e.customMessage=e.message || 'category delete fail'
+           e.customMessage='category delete fail'
             next(e)
     }
 }

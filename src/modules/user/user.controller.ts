@@ -69,7 +69,7 @@ const DeleteCustomerProfile = async (req: Request, res: Response, next: NextFunc
         const result = await UserService.DeleteCustomerProfile(req.params.id as string,users.id, users.role as string)
         res.status(201).json({ sucess: true, message: "get all users sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || "get all user fail"
+        e.Custommessage = "get all user fail"
         next(e)
     }
 
