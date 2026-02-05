@@ -8,7 +8,7 @@ model Meal {
     providerId        String
     userid            String
     categoryId        String
-
+    
     createdAt   DateTime        @default(now())
     updatedAt  DateTime   @updatedAt
     //   relationship

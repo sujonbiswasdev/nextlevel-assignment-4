@@ -1,33 +1,44 @@
 import { Category } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 
-const CreateCategory=async(data:{name:string},role:string)=>{
-    if(role!=='Admin'){
-        throw new Error("category create only admin")
+const CreateCategory=async(data:{name:string},role:string,adminId:string)=>{
+    const existAdminUser=await prisma.user.findUniqueOrThrow({where:{id:adminId}})
+    if(role!=='Admin' || existAdminUser.id!==adminId){
+        throw new Error(role?"category create only admin":"admin user not found")
     }
   return  await prisma.category.create({
-        data
+        data:{
+            name:data.name,
+            adminId:adminId
+        }
     })
 
 }
 
 
-const getCategory=async(role:string)=>{
-    if(role!=='Admin'){
-        throw new Error("category get only admin")
-    }
-  return  await prisma.category.findMany({include:{meals:true}})
+const getCategory=async()=>{
+
+  return  await prisma.category.findMany({include:{meals:true,user:true}})
 
 }
 
-const UpdateCategory=async(id:string,role:string,data:Partial<Category>)=>{
-    const {name}=data;
-    if(role!=='Admin'){
-        throw new Error("category get only admin")
+const SingleCategory=async(id:string)=>{
+  const result = await prisma.category.findFirstOrThrow({
+    where:{id},
+    include:{meals:true,user:true}
+  })
+  return result
+
+}
+
+const UpdateCategory=async(id:string,data:Partial<Category>)=>{
+    if(!data.name){
+        throw new Error("please provide a valid property")
     }
+    const {name}=data;
     const existcategory=await prisma.category.findUniqueOrThrow({where:{id}})
     if(existcategory.name==name){
-        throw new Error("category name already up to date")
+        throw new Error("Category name is already up to date.")
 
     }
   const result = await prisma.category.update({
@@ -41,9 +52,10 @@ const UpdateCategory=async(id:string,role:string,data:Partial<Category>)=>{
   return result
 }
 
-const DeleteCategory=async(id:string,role:string)=>{
-    if(role!=='Admin'){
-        throw new Error("category delete only admin")
+const DeleteCategory=async(id:string)=>{
+    const existingUser=await prisma.category.findUniqueOrThrow({where:{id}})
+    if(existingUser.id!==id){
+        throw new Error("category user not found")
     }
   const result = await prisma.category.delete({
     where:{id}
@@ -53,4 +65,4 @@ const DeleteCategory=async(id:string,role:string)=>{
 }
 
 
-export const categoryService={CreateCategory,getCategory,UpdateCategory,DeleteCategory}
+export const categoryService={CreateCategory,getCategory,UpdateCategory,DeleteCategory,SingleCategory}

@@ -7,6 +7,7 @@ const router=Router()
 
 router.post("/admin/category",auth([Roles.Admin]),CategoryController.CreateCategory)
 router.get("/admin/category",auth([Roles.Admin]),CategoryController.getCategory)
+router.get("/admin/category/:id",auth([Roles.Admin]),CategoryController.SingleCategory)
 router.put("/admin/category/:id",auth([Roles.Admin]),CategoryController.UpdateCategory)
 router.delete("/admin/category/:id",auth([Roles.Admin]),CategoryController.DeleteCategory)
 

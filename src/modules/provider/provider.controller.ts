@@ -8,9 +8,9 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await providerService.createProvider(req.body,users.id)
-        res.status(201).json({message:"provider profile create sucessfully",result})
+        res.status(201).json({message:"provider profile complete sucessfully",result})
     } catch (e:any) {
-        e.Custommessage='provider profile create fail'
+        e.Custommessage='provider profile complete failed'
         next(e)
     }
 }
@@ -18,18 +18,18 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
 const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getAllProvider()
-        res.status(201).json({message:"get all provider sucessfully",result})
+        res.status(200).json({message:"retrieve all provider sucessfully",result})
     } catch (e:any) {
-        e.Custommessage='get provider fail'
+        e.Custommessage='Could not retrieve providers'
         next(e)
     }
 }
 const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getProviderWithMeals(req.params.id as string)
-        res.status(201).json({message:"get provider with meal sucessfully",result})
+        res.status(200).json({message:"retrieve provider profile with menu sucessfully",result})
     } catch (e:any) {
-        e.Custommessage= 'get provider with meal fail'
+        e.Custommessage='retrieve provider profile with menu failed'
         next(e)
     }
 }
