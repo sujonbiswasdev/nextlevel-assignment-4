@@ -6,5 +6,6 @@ import auth from "../../middleware/auth";
 const router=Router()
 
 router.post("/admin/category",auth([Roles.Admin]),CategoryController.CreateCategory)
+router.get("/admin/category",auth([Roles.Admin]))
 
 export const CategoryRouter={router}
