@@ -48,7 +48,7 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
   }
 }
 
-const UpdateUser = async (id: string, role: string, data: Partial<User>) => {
+const UpdateUserStatus = async (id: string, role: string, data: Partial<User>) => {
   const { status } = data
   const curentUser = await prisma.user.findUniqueOrThrow({
     where: { id }
@@ -176,4 +176,4 @@ const userRoleChange = async (id: string, userId: string, data: Partial<User>) =
 
 }
 
-export const UserService = { GetAllUsers, UpdateUser, getCustomerprofile, UpdateCustomerProfile, DeleteCustomerProfile, userRoleChange }
+export const UserService = { GetAllUsers, UpdateUserStatus, getCustomerprofile, UpdateCustomerProfile, DeleteCustomerProfile, userRoleChange }

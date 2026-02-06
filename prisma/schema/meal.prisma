@@ -14,7 +14,7 @@ model Meal {
     //   relationship
     provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
     reviews     Review[]
-    orders      Order[]
+    orderitem      Orderitem[]
     category Category        @relation(fields: [category_name], references: [name], onDelete: Cascade)
     @@map("meal")
 }

@@ -5,6 +5,9 @@ CREATE TYPE "Role" AS ENUM ('Customer', 'Provider', 'Admin');
 CREATE TYPE "Status" AS ENUM ('activate', 'suspend');
 
 -- CreateEnum
+CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
 CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'GLUTEN_FREE', 'KETO');
 
 -- CreateEnum
@@ -93,6 +96,8 @@ CREATE TABLE "meal" (
     "dietaryPreference" "DietaryPreference" NOT NULL,
     "providerId" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
+    "cuisine" TEXT NOT NULL,
+    "status" "ApprovalStatus" NOT NULL DEFAULT 'APPROVED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -104,7 +109,6 @@ CREATE TABLE "order" (
     "id" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
-    "mealId" TEXT NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PLACED',
     "totalPrice" INTEGER NOT NULL,
     "address" TEXT NOT NULL,
@@ -120,6 +124,7 @@ CREATE TABLE "orderitem" (
     "orderId" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "quantity" INTEGER NOT NULL,
+    "mealId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -197,10 +202,10 @@ ALTER TABLE "order" ADD CONSTRAINT "order_customerId_fkey" FOREIGN KEY ("custome
 ALTER TABLE "order" ADD CONSTRAINT "order_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "providerprofile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order" ADD CONSTRAINT "order_mealId_fkey" FOREIGN KEY ("mealId") REFERENCES "meal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "orderitem" ADD CONSTRAINT "orderitem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "orderitem" ADD CONSTRAINT "orderitem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "orderitem" ADD CONSTRAINT "orderitem_mealId_fkey" FOREIGN KEY ("mealId") REFERENCES "meal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "providerprofile" ADD CONSTRAINT "providerprofile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

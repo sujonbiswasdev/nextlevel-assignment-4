@@ -2,7 +2,6 @@ model Order {
   id         String          @id @default(uuid()) 
   customerId String
   providerId String
-  mealId      String
   status     OrderStatus     @default(PLACED)
   totalPrice Int 
   address    String          @db.Text
@@ -12,7 +11,7 @@ model Order {
   orderitem Orderitem[]
   customer   User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
   provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
 
   @@map("order")
 }
@@ -21,10 +20,15 @@ model Orderitem{
    orderId String
    price   Float
    quantity Int
+    mealId      String
    order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
    @@map("orderitem")
   createdAt  DateTime        @default(now())
   updatedAt  DateTime   @updatedAt 
+
+  // relationship
+
+    meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
 }
 
 enum OrderStatus {

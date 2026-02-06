@@ -12,13 +12,13 @@ const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-const UpdateUser = async (req: Request, res: Response, next: NextFunction) => {
+const UpdateUserStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const users = req.user
         if (!users) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.UpdateUser(req.params.id as string, users.role as string, req.body)
+        const result = await UserService.UpdateUserStatus(req.params.id as string, users.role as string, req.body)
 
         res.status(200).json({ sucess: true, message: result?.isActive ? 'user has been activated' : 'user has been suspend', result })
     } catch (e: any) {
@@ -93,7 +93,7 @@ const UpdateRoleUsers = async (req: Request, res: Response, next: NextFunction) 
 
 export const UserController = {
     GetAllUsers,
-    UpdateUser,
+    UpdateUserStatus,
     getCustomerProfile,
     UpateCustomerProfile,
     DeleteCustomerProfile,

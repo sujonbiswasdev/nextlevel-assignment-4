@@ -4,7 +4,8 @@ model Review {
   mealId     String
   parentId String?
   rating     Int
-  comment    String?  @db.Text
+  status   ReviewStatus @default(APPROVED)
+  comment    String  @db.Text
   createdAt      DateTime @default(now())
   updatedAt  DateTime   @updatedAt
   // relationship
@@ -13,4 +14,9 @@ model Review {
   customer User @relation(fields: [customerId],references: [id],onDelete: Cascade)
   meal Meal @relation(fields: [mealId],references: [id],onDelete: Cascade)
   @@map("review")
+}
+
+enum ReviewStatus {
+    APPROVED
+    REJECT
 }

@@ -11,6 +11,7 @@ const createMeal = async (data: { meals_name: string, description: string, price
             }
         }
     )
+    console.log(providerid)
     return await prisma.meal.create({
         data: {
             meals_name: data.category_name,
