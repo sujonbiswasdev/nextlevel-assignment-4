@@ -27,7 +27,6 @@ model User {
   // relationship
   reviews  Review[]
   orders   Order[]
-  meals Meal[]
   category Category[]
   provider ProviderProfile?
 
