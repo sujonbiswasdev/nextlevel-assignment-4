@@ -8,6 +8,7 @@ model Meal {
     providerId        String
     category_name        String
     cuisine    String
+    status    ApprovalStatus @default(APPROVED)
     createdAt   DateTime        @default(now())
     updatedAt  DateTime   @updatedAt
     //   relationship
@@ -16,6 +17,12 @@ model Meal {
     orders      Order[]
     category Category        @relation(fields: [category_name], references: [name], onDelete: Cascade)
     @@map("meal")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum DietaryPreference {

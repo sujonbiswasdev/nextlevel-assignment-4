@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "meal" ALTER COLUMN "status" SET DEFAULT 'APPROVED';
