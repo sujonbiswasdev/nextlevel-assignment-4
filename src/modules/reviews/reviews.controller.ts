@@ -42,6 +42,17 @@ const deleteReview = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
+const moderateReview = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        const { reviewId } = req.params;
+        const result = await ReviewsService.moderateReview(reviewId as string, req.body)
+         res.status(200).json({message:"moderate reviews update sucessfully",result})
+    } catch (e:any) {
+        e.customMessage=e.message || 'moderate reviews review failed'
+        next(e)
+    }
+}
+
 const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { authorid } = req.params;
@@ -52,4 +63,4 @@ const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
         next(e)
     }
 }
-export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid}
+export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid,moderateReview}

@@ -1,3 +1,4 @@
+import { ReviewStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 
 const CreateReviews = async (customerid: string, mealid: string, data: { rating: string, comment: string, parentId?: string }) => {
@@ -85,15 +86,37 @@ const deleteReview = async (reviewid: string, authorid: string) => {
 }
 
 const getReviewByid = async (reviewid: string) => {
-    return await prisma.review.findMany({
+    return await prisma.review.findFirstOrThrow({
         where: {
             id:reviewid
         },
-        orderBy: { createdAt: "desc" },
         include: {
             meal:true
         }
     })
 }
 
-export const ReviewsService = { CreateReviews,updateReview ,deleteReview,getReviewByid}
+const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
+    const reviewData = await prisma.review.findUniqueOrThrow({
+        where: {
+            id
+        },
+        select: {
+            id: true,
+            status: true
+        }
+    });
+
+    if (reviewData.status === data.status) {
+        throw new Error(`Your provided status (${data.status}) is already up to date.`)
+    }
+
+    return await prisma.review.update({
+        where: {
+            id
+        },
+        data
+    })
+}
+
+export const ReviewsService = { CreateReviews,updateReview ,deleteReview,getReviewByid,moderateReview}
