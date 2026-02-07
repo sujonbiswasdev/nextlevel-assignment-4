@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express"
 import { ReviewsService } from "./reviews.service"
+import { ReviewStatus } from "../../../generated/prisma/enums"
 
 const CreateReviews = async (req: Request, res: Response,next:NextFunction) => {
     try {
@@ -53,6 +54,7 @@ const moderateReview = async (req: Request, res: Response,next:NextFunction) => 
     }
 }
 
+
 const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { authorid } = req.params;
@@ -63,4 +65,5 @@ const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
         next(e)
     }
 }
+
 export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid,moderateReview}

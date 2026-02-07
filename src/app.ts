@@ -11,6 +11,7 @@ import { OrderRouter } from './modules/order/order.route';
 import { CategoryRouter } from './modules/category/category.route';
 import { UserRouter } from './modules/user/user.route';
 import { ReviewsRouter } from './modules/reviews/reviews.route';
+import { StatsRouter } from './modules/stats/stats.route';
 
 
 const app = express()
@@ -38,6 +39,9 @@ app.use("/api",CategoryRouter.router)
 app.use("/api",UserRouter.router)
 //reviews
 app.use('/api',ReviewsRouter.router)
+
+//stats
+app.use('/api',StatsRouter.router)
 
 app.use("/api/auth",authRouter.router)
 

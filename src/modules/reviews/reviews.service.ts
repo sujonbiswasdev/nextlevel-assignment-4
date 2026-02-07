@@ -119,4 +119,5 @@ const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
     })
 }
 
+
 export const ReviewsService = { CreateReviews,updateReview ,deleteReview,getReviewByid,moderateReview}
