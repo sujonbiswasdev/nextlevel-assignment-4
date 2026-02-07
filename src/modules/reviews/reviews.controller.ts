@@ -47,9 +47,9 @@ const moderateReview = async (req: Request, res: Response,next:NextFunction) => 
     try {
         const { reviewId } = req.params;
         const result = await ReviewsService.moderateReview(reviewId as string, req.body)
-         res.status(200).json({message:"moderate reviews update sucessfully",result})
+         res.status(200).json({message:"moderate review update sucessfully",result})
     } catch (e:any) {
-        e.customMessage=e.message || 'moderate reviews review failed'
+        e.customMessage=e.message || 'moderate review update failed'
         next(e)
     }
 }
@@ -59,9 +59,9 @@ const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { authorid } = req.params;
         const result = await ReviewsService.getReviewByid(authorid as string)
-        res.status(200).json({message:"reviews retrieve sucessfully",result})
+        res.status(200).json({message:"retrieve review by id sucessfully",result})
     } catch (e:any) {
-        e.customMessage=e.message || 'reviews retrieve failed'
+        e.customMessage=e.message || 'retrieve review by id failed'
         next(e)
     }
 }

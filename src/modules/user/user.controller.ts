@@ -54,7 +54,7 @@ const UpateCustomerProfile = async (req: Request, res: Response, next: NextFunct
 
         res.status(201).json({ sucess: true, message: "customer profile update sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = e.message || "customer profile update fail"
+        e.Custommessage = e.message || "customer profile update failed"
         next(e)
     }
 
@@ -67,9 +67,9 @@ const DeleteCustomerProfile = async (req: Request, res: Response, next: NextFunc
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result = await UserService.DeleteCustomerProfile(req.params.id as string,users.id, users.role as string)
-        res.status(201).json({ sucess: true, message: "get all users sucessfully", result })
+        res.status(201).json({ sucess: true, message: "customer profile delete sucessfully", result })
     } catch (e: any) {
-        e.Custommessage = "get all user fail"
+        e.Custommessage = "customer profile delete failed"
         next(e)
     }
 
@@ -83,7 +83,7 @@ const UpdateRoleUsers = async (req: Request, res: Response, next: NextFunction) 
         }
         const result = await UserService.userRoleChange(req.params.id as string,users.id as string, req.body)
 
-        res.status(200).json({ sucess: true, message:"user role change", result })
+        res.status(200).json({ sucess: true, message:"user role change sucessfully", result })
     } catch (e: any) {
         e.Custommessage = e.message || "user role change failed"
         next(e)

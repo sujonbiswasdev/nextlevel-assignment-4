@@ -4,14 +4,14 @@ import paginationSortingHelper from "../helpers/paginationHelping"
 
 const createMeal = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const user = req.user
+       const user = req.user
         if (!user) {
-            throw new Error("user not found")
+           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result = await mealService.createMeal(req.body, user.id)
         res.status(201).json({ message: "meal create sucessfully", result })
     } catch (e: any) {
-        e.customMessage = 'meal create fail'
+        e.customMessage = 'meal create failed'
         next(e)
         console.log(e)
     }

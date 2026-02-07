@@ -11,7 +11,6 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
         res.status(201).json({ sucess: true, message: "order create sucessfully", result })
     } catch (e: any) {
         e.Custommessage = "order create failed"
-        console.log(e)
         next(e)
 
     }
@@ -29,6 +28,7 @@ const getOwnmealsOrder = async (req: Request, res: Response, next: NextFunction)
     } catch (e: any) {
         e.Custommessage ="Orders for your meals retrieved failed"
         next(e)
+        console.log(e)
 
     }
 
@@ -74,7 +74,7 @@ const customerOrderStatusTrack = async (req: Request, res: Response, next: NextF
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result = await ServiceOrder.customerOrderStatusTrack(req.params.id as string,users.id)
-        res.status(201).json({ sucess: true, message: "Your orders have been retrieved successfully.", result })
+        res.status(200).json({ sucess: true, message: "Your orders status retrieved successfully.", result })
     } catch (e: any) {
         e.Custommessage ="Your orders have been retrieved failed"
         next(e)
@@ -86,14 +86,14 @@ const customerOrderStatusTrack = async (req: Request, res: Response, next: NextF
 const CustomerRunningAndOldOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {status}= req.query
-        const users = req.user
-        if (!users) {
+        const user = req.user
+        if (!user) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await ServiceOrder.CustomerRunningAndOldOrder(users.id,status as string )
-        res.status(201).json({ sucess: true, message: "Your orders have been retrieved successfully.", result })
+        const result = await ServiceOrder.CustomerRunningAndOldOrder(user.id,status as string )
+        res.status(201).json({ sucess: true, message: "Your running or old orders retrieved successfully.", result })
     } catch (e: any) {
-        e.Custommessage ="Your orders have been retrieved failed"
+        e.Custommessage ="Your running or old orders retrieved failed"
         next(e)
 
     }
@@ -107,7 +107,6 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
     } catch (e: any) {
         e.Custommessage ="Your single orders have been retrieved failed"
         next(e)
-
     }
 
 }

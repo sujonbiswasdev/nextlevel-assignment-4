@@ -1,9 +1,9 @@
 import { ReviewStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 
-const CreateReviews = async (customerid: string, mealid: string, data: { rating: string, comment: string, parentId?: string }) => {
+const CreateReviews = async (customerid: string, mealid: string, data: { rating: number, comment: string, parentId?: string }) => {
 
-    const orderMealid = await prisma.orderitem.findFirst(
+    const orderMealid = await prisma.orderitem.findFirstOrThrow(
         {
             where: { mealId: mealid },
             include: {
@@ -15,6 +15,9 @@ const CreateReviews = async (customerid: string, mealid: string, data: { rating:
             }
         }
     )
+    if(data.rating>=5){
+        throw new Error("your provided rating is invalid")
+    }
 
     if (!orderMealid || orderMealid.mealId !== mealid || orderMealid.order.customerId !== customerid) {
         throw new Error('You must place an order before leaving a review.')
@@ -45,7 +48,6 @@ const updateReview = async (reviewId: string, data: { comment?: string,rating:nu
             id: true
         }
     })
-    console.log(data.comment)
     if (!review) {
         throw new Error("Your provided input is invalid!")
     }
@@ -64,7 +66,7 @@ const updateReview = async (reviewId: string, data: { comment?: string,rating:nu
 
 
 const deleteReview = async (reviewid: string, authorid: string) => {
-    const review = await prisma.review.findFirst({
+    const review = await prisma.review.findFirstOrThrow({
         where: {
             id: reviewid,
             customerId:authorid
@@ -73,10 +75,6 @@ const deleteReview = async (reviewid: string, authorid: string) => {
             id: true
         }
     })
-
-    if (!review) {
-        throw new Error("Your provided input is invalid!")
-    }
 
     return await prisma.review.delete({
         where: {

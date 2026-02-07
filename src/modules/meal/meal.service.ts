@@ -11,10 +11,9 @@ const createMeal = async (data: { meals_name: string, description: string, price
             }
         }
     )
-    console.log(providerid)
     return await prisma.meal.create({
         data: {
-            meals_name: data.category_name,
+            meals_name: data.meals_name,
             description: data.description,
             price: data.price,
             isAvailable: data.isAvailable,
@@ -48,15 +47,11 @@ const UpdateMeals = async (data: Partial<Meal>, mealid: string) => {
 
 const DeleteMeals = async (mealid: string) => {
 
-    const existmeal = await prisma.meal.findUnique({
+    const existmeal = await prisma.meal.findUniqueOrThrow({
         where: {
             id: mealid
         }
     })
-    if (!existmeal?.id) {
-        throw new Error("meals not found")
-    }
-
     if (existmeal?.id !== mealid) {
         throw new Error('mealid is invalid,please check your mealid')
     }
@@ -68,7 +63,7 @@ const DeleteMeals = async (mealid: string) => {
 
 }
 
-const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string }, isAvailable?: boolean,page?:number,limit?:number | undefined,skip?:number,sortBy?:string | undefined,sortOrder?:string | undefined) => {
+const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
     const andConditions: MealWhereInput[] | MealWhereInput = []
     if (data) {
         andConditions.push({
@@ -117,7 +112,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 
 
     const allpost = await prisma.meal.findMany({
-        take:limit,
+        take: limit,
         skip,
         where: {
             AND: andConditions,
@@ -129,19 +124,19 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
         orderBy: {
             [sortBy!]: sortOrder
         },
-        
+
 
     })
 
-    const total=await prisma.meal.count()
+    const total = await prisma.meal.count()
 
     return {
-        data:allpost,
-        pagination:{
+        data: allpost,
+        pagination: {
             total,
             page,
             limit,
-            totalpage:Math.ceil(total/limit!)
+            totalpage: Math.ceil(total / limit!)
         }
     }
 

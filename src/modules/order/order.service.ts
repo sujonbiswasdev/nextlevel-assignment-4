@@ -46,27 +46,15 @@ const getOwnmealsOrder = async (userid: string) => {
     const existingUser = await prisma.user.findUniqueOrThrow({
         where: { id: userid },
         include:{
-            provider:true
-        },
-    })
-
-    const ownproviderorder=await prisma.providerProfile.findUnique({
-        where:{
-            id:existingUser.provider?.id as string
-        },
-        include:{
             orders:{
-                orderBy:{createdAt:"desc"},
                 include:{
                     orderitem:true
                 }
-            },
+            }
         },
-        
     })
 
-
-    return ownproviderorder
+    return existingUser
 }
 
 const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string) => {
@@ -76,8 +64,7 @@ const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string)
     if (!statusValue.includes(status as string)) {
         throw new Error("please check your status")
     }
-    const existingOrder = await prisma.order.findUnique({ where: { id } })
-
+    const existingOrder = await prisma.order.findUniqueOrThrow({ where: { id } })
     if (existingOrder?.status == status) {
         throw new Error("Order status already up to date")
     }
@@ -195,6 +182,7 @@ const CustomerRunningAndOldOrder = async (userid:string,status:string) => {
 }
 
 const getSingleOrder = async (id:string) => {
+
     const result = await prisma.order.findUniqueOrThrow({where:{id},include:{orderitem:true}})
     return result
 }

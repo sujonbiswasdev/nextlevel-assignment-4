@@ -11,15 +11,22 @@ const getuserStats = async (adminid: string) => {
     }
 
     return await prisma.$transaction(async (tx) => {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        oneMonthAgo.setHours(0, 0, 0, 0);
-
+          // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
         const endOfToday = new Date();
         endOfToday.setHours(23, 59, 59, 999);
+        // month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const endOfMonth = new Date();
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        endOfMonth.setDate(0);
+        endOfMonth.setHours(23, 59, 59, 999);
+
         const [totalUsers, totalSuspendUser, totalActivateUser, totalAdmin, totalCustomer, totalprovider, todaystats, oneMonthago, totalemailvarified, totalactiveusers, totalunactiveuser] =
             await Promise.all([
                 await tx.user.count(),
@@ -29,7 +36,7 @@ const getuserStats = async (adminid: string) => {
                 await tx.user.count({ where: { role: 'Customer' } }),
                 await tx.user.count({ where: { role: 'Provider' } }),
                 await tx.user.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
-                await tx.user.count({ where: { createdAt: oneMonthAgo } }),
+                await tx.user.count({ where: { createdAt: {gte:startOfMonth,lte:endOfMonth} } }),
                 await tx.user.count({ where: { emailVerified: false } }),
                 await tx.user.count({ where: { isActive: true } }),
                 await tx.user.count({ where: { isActive: false } })
@@ -95,19 +102,25 @@ const getordersStats = async (adminid: string) => {
     }
 
     return await prisma.$transaction(async (tx) => {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        oneMonthAgo.setHours(0, 0, 0, 0);
-
+          // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
         const endOfToday = new Date();
         endOfToday.setHours(23, 59, 59, 999);
+        // month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const endOfMonth = new Date();
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        endOfMonth.setDate(0);
+        endOfMonth.setHours(23, 59, 59, 999);
         const [totalorders, oneMonth, totalcancelledmeals, totalplacedmeals, totalpreparingmeals, totalreadymeals, totaldeliveredmeals, allearn, totalquantity, todayorders] =
             await Promise.all([
                 await tx.order.count(),
-                await tx.order.count({ where: { createdAt: { gte: oneMonthAgo } } }),
+                await tx.order.count({ where: { createdAt: { gte: startOfMonth,lte:endOfMonth } } }),
                 await tx.order.count({ where: { status: 'CANCELLED' } }),
                 await tx.order.count({ where: { status: 'PLACED' } }),
                 await tx.order.count({ where: { status: 'PREPARING' } }),

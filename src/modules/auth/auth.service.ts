@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma"
 
-const getCurentUser=async(id:string)=>{
+const getCurrentUser=async(id:string)=>{
      return await prisma.user.findUniqueOrThrow({
         where:{
             id
@@ -8,5 +8,5 @@ const getCurentUser=async(id:string)=>{
     })
 }
 export const authService={
-    getCurentUser
+    getCurrentUser
 }

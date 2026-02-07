@@ -21,9 +21,9 @@ const getmealsStats=async(req:Request,res:Response)=>{
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getmealsStats(user.id)
-        res.status(200).json({sucess:true,message:"retrieve provider stats sucessfully",result})
+        res.status(200).json({sucess:true,message:"retrieve meals stats sucessfully",result})
     } catch (error) {
-        res.status(400).json({sucess:false,message:"retrieve provider stats failed"})
+        res.status(400).json({sucess:false,message:"retrieve meals stats failed"})
     }
 }
 
@@ -34,9 +34,9 @@ const getordersStats=async(req:Request,res:Response)=>{
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getordersStats(user.id)
-        res.status(200).json({sucess:true,message:"retrieve provider stats sucessfully",result})
+        res.status(200).json({sucess:true,message:"retrieve orders stats sucessfully",result})
     } catch (error) {
-        res.status(400).json({sucess:false,message:"retrieve provider stats failed"})
+        res.status(400).json({sucess:false,message:"retrieve orders stats failed"})
     }
 }
 
@@ -47,9 +47,9 @@ const getrevenueStats=async(req:Request,res:Response)=>{
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getrevenueStats(user.id)
-        res.status(200).json({sucess:true,message:"retrieve provider stats sucessfully",result})
+        res.status(200).json({sucess:true,message:"retrieve revenue stats sucessfully",result})
     } catch (error) {
-        res.status(400).json({sucess:false,message:"retrieve provider stats failed"})
+        res.status(400).json({sucess:false,message:"retrieve revenue stats failed"})
     }
 }
 
@@ -60,24 +60,22 @@ const getreviewStats=async(req:Request,res:Response)=>{
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getreviewStats(user.id)
-        res.status(200).json({sucess:true,message:"retrieve provider stats sucessfully",result})
+        res.status(200).json({sucess:true,message:"retrieve reviews stats sucessfully",result})
     } catch (error) {
-        res.status(400).json({sucess:false,message:"retrieve provider stats failed"})
+        res.status(400).json({sucess:false,message:"retrieve reviews stats failed"})
     }
 }
 
 const getcategoryStats=async(req:Request,res:Response)=>{
     try {
-        console.log('dlkfjlksdjfkldsjflkj')
         const user = req.user
         if (!user) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getcategoryStats(user.id)
-        res.status(200).json({sucess:true,message:"retrieve provider stats sucessfully",result})
+        res.status(200).json({sucess:true,message:"retrieve category stats sucessfully",result})
     } catch (error) {
-        res.status(400).json({sucess:false,message:"retrieve provider stats failed"})
-        console.log(error)
+        res.status(400).json({sucess:false,message:"retrieve category stats failed"})
     }
 }
 export const StatsController={

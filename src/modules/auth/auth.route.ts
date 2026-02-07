@@ -4,6 +4,6 @@ import auth from "../../middleware/auth";
 import { UserRoles } from "../../middleware/auth.const";
 
 const router=Router()
-router.get('/me',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),authController.getCurentUser)
+router.get('/me',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),authController.getCurrentUser)
 
 export const authRouter={router}

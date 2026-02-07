@@ -1,19 +1,19 @@
 import { Request, Response } from "express"
 import { authService } from "./auth.service"
 
-const getCurentUser=async(req:Request,res:Response)=>{
+const getCurrentUser = async (req: Request, res: Response) => {
     try {
-        const user= req.user
-        if(!user){
-            throw new Error("user not found")
+        const user = req.user
+        if (!user) {
+            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result =await authService.getCurentUser(user.id)
-        res.status(200).json({sucess:true,message:"user get sucessfully",result})
+        const result = await authService.getCurrentUser(user.id)
+        res.status(200).json({ sucess: true, message: "current user get sucessfully", result })
     } catch (error) {
-        res.status(400).json({sucess:false,message:"user get fail"})
+        res.status(400).json({ sucess: false, message: "current user get failed" })
     }
 }
 
-export const authController={
-    getCurentUser
+export const authController = {
+    getCurrentUser
 }
