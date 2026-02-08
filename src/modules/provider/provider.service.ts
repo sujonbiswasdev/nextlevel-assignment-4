@@ -31,8 +31,8 @@ const createProvider = async (data: unknown, userId: string) => {
         }
     })
     return {
-        sucess:false,
-        message:result?`your provider profile has beed created`:`your provider profile create failed`,
+        sucess:true,
+        message:`your provider profile has beed created`,
         result
     };
 
@@ -40,9 +40,13 @@ const createProvider = async (data: unknown, userId: string) => {
 }
 
 const getAllProvider = async () => {
-    const result = await prisma.providerProfile.findMany()
+    const result = await prisma.providerProfile.findMany({
+      orderBy:{
+        createdAt:"desc"
+      }
+    })
     return {
-        sucess:false,
+        sucess:result?true:false,
         message:result?`provider data has been retrieved sucessfully`:`provider data retrieve fail`,
         result
     }
@@ -60,19 +64,75 @@ const getProviderWithMeals = async (id: string) => {
             meals: {
                 include: {
                     category: true
+                },
+                orderBy:{
+                  createdAt:'desc'
                 }
-            }
-        }
+            },
+        },
+
     })
     return {
-        sucess:false,
-        message:result?`retrieve provider data with meals sucessfully`:`retrieve provider data with meals fail`,
+        sucess:true,
+        message:`retrieve provider data with meals sucessfully`,
         result
     }
+}
+
+
+const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: string) => {
+  const providerData = z.object({
+    restaurantName: z.string().optional(),
+    address: z.string().optional(),
+    description: z.string().optional(),
+    image: z.string().min(8).optional(),
+  }).strict()
+
+  const parseData = providerData.safeParse(data)
+
+  if (!parseData.success) {
+    return {
+      sucess: false,
+      message: "your provider profile updated failed",
+      data: formatZodIssues(parseData.error)
+    }
+  }
+
+
+  if (!data) {
+    throw new Error("your data isn't found,please provide a data")
+  }
+  const providerinfo = await prisma.user.findUniqueOrThrow({
+    where: { id: userid },
+    include:{
+      provider:true
+    }
+  })
+  if (!providerinfo) {
+    throw new Error('provider data not found')
+  }
+  const result = await prisma.providerProfile.update({
+    where: { id: providerinfo.provider!.id },
+    data: {
+      restaurantName:parseData.data.restaurantName,
+      image: parseData.data.image,
+      description:parseData.data.description,
+      address:parseData.data.address,
+    }
+  })
+
+  return {
+    success:true,
+    message:"your provider profile has been updated successfully",
+    result
+  }
+
+
 }
 
 export const providerService = {
     createProvider,
     getAllProvider,
-    getProviderWithMeals
+    getProviderWithMeals,
+    UpateProviderProfile
 }

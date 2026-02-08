@@ -47,7 +47,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
     if (data.dietaryPreference?.length) {
         const dietaryList = data.dietaryPreference.split(',') as DietaryPreference[];
         andConditions.push({
-            OR: dietaryList.map(item => ({ dietaryPreference: item }))
+            OR: dietaryList.map(item => ({ dietaryPreference: item}))
         });
     }
 
@@ -70,7 +70,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 
     })
 
-    const total = await prisma.meal.count()
+    const total = await prisma.meal.count({where:{AND:andConditions}})
 
     return {
         success: true,
@@ -87,6 +87,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 
 
 }
+
 
 const getSinglemeals = async (id: string) => {
     const result = await prisma.meal.findUniqueOrThrow({
@@ -170,12 +171,12 @@ const createMeal = async (data: unknown, userid: string) => {
 const UpdateMeals = async (data:unknown, mealid: string) => {
     const {category_name}=data as any
         const mealsData = z.object({
-        meals_name: z.string(),
+        meals_name: z.string().optional(),
         description:z.string().optional(),
-        price:z.number(),
+        price:z.number().optional(),
         isAvailable:z.boolean().optional(),
         dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
-        cuisine:z.string(),
+        cuisine:z.string().optional(),
         status:z.enum(['PENDING','APPROVED','REJECTED']).default('PENDING')
     }).strict()
     const parseData = mealsData.safeParse(data)

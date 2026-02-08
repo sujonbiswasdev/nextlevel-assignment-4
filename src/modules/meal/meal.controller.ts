@@ -12,11 +12,9 @@ const createMeal = async (req: Request, res: Response, next: NextFunction) => {
         if(!result.success){
             res.status(400).json({result })
         }
-        res.status(201).json({ message: "meal create sucessfully", result })
+        res.status(201).json({ result })
     } catch (e: any) {
-        e.customMessage =e.message || 'meal create failed'
         next(e)
-        console.log(e.message)
     }
 }
 
@@ -27,9 +25,8 @@ const UpdateMeals = async (req: Request, res: Response, next: NextFunction) => {
         if(!result.success){
             res.status(400).json({result })
         }
-        res.status(200).json({ message: "meal update sucessfully", result })
+        res.status(200).json({  result })
     } catch (e: any) {
-        e.customMessage =e.message || 'meal update failed'
         next(e)
     }
 }
@@ -41,9 +38,8 @@ const DeleteMeals = async (req: Request, res: Response, next: NextFunction) => {
         if(!result.success){
             res.status(400).json({result })
         }
-        res.status(200).json({ message: "meal delete sucessfully", result })
+        res.status(200).json({ result })
     } catch (e: any) {
-        e.customMessage = `${e.message}`
         next(e)
     }
 }
@@ -64,11 +60,10 @@ const Getallmeals = async (req: Request, res: Response, next: NextFunction) => {
         if(!result.success){
             res.status(400).json({result })
         }
-        res.status(200).json({ message: "retrieve all meals sucessfully", result })
+        res.status(200).json({result })
     } catch (e: any) {
-        e.customMessage = `retrieve all meal failed`
         next(e)
-        console.log(e)
+ 
     }
 }
 
@@ -79,9 +74,8 @@ const GetSignlemeals = async (req: Request, res: Response, next: NextFunction) =
         if(!result.success){
             res.status(400).json({result })
         }
-        res.status(200).json({ message: "retrieve signle meal sucessfully", result })
+        res.status(200).json({result })
     } catch (e: any) {
-        e.customMessage = `retrieve signle meal failed`
         next(e)
     }
 }

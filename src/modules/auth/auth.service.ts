@@ -11,7 +11,8 @@ const getCurrentUser = async (id: string) => {
 
     return {
         sucess:true,
-        message:result?`current user retrieve successfully`:`current user retrieve failed`
+        message:result?`current user retrieve successfully`:`current user retrieve failed`,
+        result
     }
 }
 export const authService = {

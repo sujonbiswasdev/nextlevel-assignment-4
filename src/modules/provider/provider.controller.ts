@@ -26,7 +26,6 @@ const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
         res.status(200).json({result})
 
     } catch (e:any) {
-        e.Custommessage='Could not retrieve providers'
         next(e)
     }
 }
@@ -38,9 +37,24 @@ const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
         }
         res.status(200).json({result})
     } catch (e:any) {
-        e.Custommessage='retrieve provider profile with menu failed'
         next(e)
     }
 }
 
-export const providerController={createProvider,gelAllprovider,getProviderWithMeals}
+const UpateProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const user = req.user
+        if (!user) {
+           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        }
+        const result =await providerService.UpateProviderProfile(req.body,user.id)
+         if(!result.success){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result})
+    } catch (e:any) {
+        next(e)
+    }
+}
+
+export const providerController={createProvider,gelAllprovider,getProviderWithMeals,UpateProviderProfile}

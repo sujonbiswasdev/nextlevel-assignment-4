@@ -13,8 +13,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
         }
         res.status(201).json({ result })
     } catch (e: any) {
-        e.Custommessage = "order create failed"
-        next(e)
+        next(e.message)
 
     }
 
@@ -32,9 +31,7 @@ const getOwnmealsOrder = async (req: Request, res: Response, next: NextFunction)
         }
         res.status(200).json({result })
     } catch (e: any) {
-        e.Custommessage ="Orders for your meals retrieved failed"
         next(e)
-        console.log(e)
 
     }
 
@@ -52,8 +49,7 @@ const UpdateOrderStatus = async (req: Request, res: Response, next: NextFunction
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage =e.message|| "order status update failed"
-        next(e)
+        next(e.message)
 
     }
 
@@ -71,7 +67,6 @@ const getAllOrder = async (req: Request, res: Response, next: NextFunction) => {
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage =" get all order fail"
         next(e)
 
     }
@@ -91,11 +86,9 @@ const customerOrderStatusTrack = async (req: Request, res: Response, next: NextF
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage ="Your orders have been retrieved failed"
         next(e)
 
     }
-
 }
 
 const CustomerRunningAndOldOrder = async (req: Request, res: Response, next: NextFunction) => {
@@ -111,7 +104,6 @@ const CustomerRunningAndOldOrder = async (req: Request, res: Response, next: Nex
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage ="Your running or old orders retrieved failed"
         next(e)
 
     }
@@ -126,7 +118,6 @@ const getSingleOrder = async (req: Request, res: Response, next: NextFunction) =
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage ="Your single orders have been retrieved failed"
         next(e)
     }
 

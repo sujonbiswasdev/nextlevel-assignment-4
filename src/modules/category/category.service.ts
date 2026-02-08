@@ -25,7 +25,7 @@ const CreateCategory = async (data: { name: string }, adminId: string) => {
 
     return {
     sucess:true,
-    message:result?`your category has been created`:`your category didn't created`,
+    message:`your category has been created`,
     result
   }
 
@@ -33,10 +33,10 @@ const CreateCategory = async (data: { name: string }, adminId: string) => {
 
 
 const getCategory = async () => {
-  const result = await prisma.category.findMany({ include: { meals: true, user: true } })
+  const result = await prisma.category.findMany({ include: { meals: true, user: true },orderBy:{name:'desc'} })
   return {
-    success: true,
-    message: result ? `retrieve all category sucessfully` : `couldn't retrieve all category`,
+    success:true,
+    message: `retrieve all category sucessfully`,
     result
   }
 
@@ -49,7 +49,7 @@ const SingleCategory = async (id: string) => {
   })
   return {
     sucess: true,
-    message: result ? `retrieve single category sucessfully` : `retrieve single category fail`,
+    message: `retrieve single category sucessfully`,
     result
   }
 
@@ -82,8 +82,8 @@ const UpdateCategory = async (id: string, data: Partial<Category>) => {
     }
   })
   return {
-    success:false,
-    message:result?`your category has beed changed`:`your category didn't changed`,
+    success:true,
+    message:`your category has beed changed`,
     result}
 }
 
@@ -94,7 +94,7 @@ const DeleteCategory = async (id: string) => {
   })
   return {
     success:true,
-    message:result?`your category data sucessfully`:`your category delete failed`,
+    message:`your category data sucessfully`,
     result}
 
 }

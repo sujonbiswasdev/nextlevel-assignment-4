@@ -6,9 +6,7 @@ import { formatZodIssues } from "../../utils/handleZodError";
 const CreateOrder = async (mealid: string, payload: Omit<Order & Orderitem, 'id' | 'createdAt' | 'customerId'>, customerId: string) => {
 
     const orderData = z.object({
-        totalPrice: z.number(),
         address: z.string(),
-        price: z.number().default(0),
         quantity: z.number().default(0)
     });
     const parseData = orderData.safeParse(payload)
@@ -19,6 +17,8 @@ const CreateOrder = async (mealid: string, payload: Omit<Order & Orderitem, 'id'
             data: formatZodIssues(parseData.error)
         }
     }
+
+
     const existingUser = await prisma.user.findUniqueOrThrow({
         where: {
             id: customerId
@@ -27,35 +27,36 @@ const CreateOrder = async (mealid: string, payload: Omit<Order & Orderitem, 'id'
     if (!existingUser) {
         throw new Error("customer user not found")
     }
-    const existmeal = await prisma.meal.findUnique({ where: { id: mealid }, include: { provider: { select: { id: true } } } })
-
+    const mealsData = await prisma.meal.findUnique({ where: { id: mealid }, include: { provider: { select: { id: true } } } })
+    if (!mealsData) {
+        throw new Error('meals data not found')
+    }
     const result = await prisma.order.create({
         data: {
-            customerId,
-            providerId: existmeal!.provider!.id!,
+            customerId: existingUser.id,
+            providerId: mealsData!.provider!.id!,
             orderitem: {
                 create: [
                     {
-                        price: Number(parseData.data.price),
-                        quantity: Number(parseData.data.quantity),
+                        price: Number(mealsData!.price),
+                        quantity: parseData.data.quantity,
                         mealId: mealid,
 
                     }
                 ]
             },
-            totalPrice: Number(parseData.data.price) * Number(parseData.data.quantity),
-            address: payload.address
+            totalPrice: Number(mealsData!.price) * Number(parseData.data.quantity),
+            address: parseData.data.address
 
         },
         include: {
-            orderitem: true,
-            customer: true
+            orderitem: true
         }
     })
 
     return {
         sucess: true,
-        message: result ? `your order has been created sucessfully` : `your order didn't created`,
+        message: `your order has been created sucessfully`,
         result
     }
 }
@@ -66,15 +67,19 @@ const getOwnmealsOrder = async (userid: string) => {
         include: {
             orders: {
                 include: {
-                    orderitem: true
+                    orderitem: {select:{orderId:true,quantity:true,meal:{select:{id:true,meals_name:true,description:true,isAvailable:true,category_name:true}},price:true},orderBy:{createdAt:"desc"}},
+                },
+                orderBy:{
+                    createdAt:"desc"
                 }
             }
         },
+
     })
 
     return {
         sucess: true,
-        message: result ? `your own meals orders retrieve successfully` : `your ownmeals didn't retrieved`,
+        message:`your own meals orders retrieve successfully`,
         result
     }
 }
@@ -102,11 +107,11 @@ const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string)
                 status
             }
         })
-         return {
-                sucess: true,
-                message: result ? `update order status successfully` : `update order status fail`,
-                result
-            }
+        return {
+            sucess: true,
+            message: result ? `update order status successfully` : `update order status fail`,
+            result
+        }
     }
 
     if (role == 'Provider' && status === 'CANCELLED') {
@@ -149,50 +154,53 @@ const getAllorder = async (role: string) => {
             createdAt: 'desc'
         }
     })
-      return {
-                sucess: true,
-                message: result ? `retrieve all order successfully` : `retrieve all order fail`,
-                result
-            }
+    return {
+        sucess: true,
+        message:`retrieve all order successfully`,
+        result
+    }
 }
 
 
 const customerOrderStatusTrack = async (mealid: string, userid: string) => {
-    const result = await prisma.orderitem.findMany({
-        where: {
-            mealId: mealid,
-            order: {
-                customerId: userid
-            },
-        },
+    const result = await prisma.order.findMany({
         include: {
-            order: {
-                include: {
-                    customer: true,
-                    orderitem: { orderBy: { createdAt: "desc" } }
+            orderitem: {
+                where: {
+                    mealId: mealid
+                },
+                select: {
+                    mealId: true,
+                    price: true,
+                    quantity: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
                 }
-            }
+            },
+
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     })
-
-     return {
-                sucess: true,
-                message: result ? `customer order status track sucessfully` : `customer order status track fail`,
-                result
-            }
+    return {
+        sucess: true,
+        message: result ? `customer order status track sucessfully` : `customer order status track fail`,
+        result
+    }
 }
 
 
 const CustomerRunningAndOldOrder = async (userid: string, status: string) => {
     const andConditions: any[] = []
-    let message = ''
+    let message = 'customer running and old order retrieve successfully'
     let currentStatus = status
     if (status == 'DELIVERED') {
         andConditions.push({ status: status })
         message = 'Recent order information retrieved successfully.',
             currentStatus = status
     }
-
     if (status == 'CANCELLED') {
         andConditions.push({ status: status })
         message = 'CANCELLED order information retrieved successfully.',
@@ -215,23 +223,27 @@ const CustomerRunningAndOldOrder = async (userid: string, status: string) => {
         }
     })
 
-     return {
-                sucess: true,
-                message: result ? `customer Running and old order retrieve sucessfully` : `customer Running and old order retrieve fail`,
-                result
-            }
+    return {
+        sucess: true,
+        message,
+        result
+    }
 }
 
 const getSingleOrder = async (id: string) => {
 
-    const result = await prisma.order.findUniqueOrThrow({ where: { id }, include: { orderitem: true } })
+    const result = await prisma.order.findUniqueOrThrow({ where: { id }, include: { orderitem: {select:{
+        meal:true,
+        orderId:true,
+        price:true,
+        quantity:true
+    },orderBy:{createdAt:'desc'}}} })
     return {
-                sucess: true,
-                message: result ? `single order retrieve sucessfully` : `single order retrieve fail`,
-                result
-            }
+        sucess: true,
+        message: `single order retrieve sucessfully`,
+        result
+    }
 }
-
 
 export const ServiceOrder = {
     CreateOrder,

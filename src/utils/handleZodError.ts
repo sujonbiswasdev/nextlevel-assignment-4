@@ -1,28 +1,28 @@
 import { ZodError } from "zod";
-type ZodErrorCode =
-  | "invalid_type"
-  | "invalid_format"
-  | "unrecognized_keys"
-  | "invalid_value"
-
 export const formatZodIssues = (error: ZodError) => {
     return error.issues.map(e=>{
         let message=''
-        switch(e.code as ZodErrorCode){
+        switch(e.code){
             case 'invalid_type':
-                message=`field ${e.path.join(", ") || "unknown"} is invalid type,plase provide a valid type`
+                message=`field ${e.path.join(", ") || "unknown"} expected ${e.expected} type,but  received ${e.input},please provide a valid type`
                 break;
             case 'unrecognized_keys':
-                message=`You provided extra fields: ${ e.path.join(", ") || "unknown"}. Please remove.`
+                message=`You provided extra fields: ${ e.keys || "unknown"}. Please remove keys ${e.keys}`
                 break;
              case 'invalid_format':
-                message=`field ${ e.path.join(", ") || "unknown"} is not a valid format,plase provide a valid format`
+                message=`field ${ e.path.join(',') || "unknown"} is not a valid format(${e.format}) but received ${e.input},please prrovide a valid format`
                 break;
              case 'invalid_value':
-                message=`invalid value,please provide a valid value`
+                message=`Invalid value. Allowed values are (${e.values}) but received ${e.input},plese provide a currect value`
+                break;
+             case 'too_big':
+                message=`field  ${e.path} provide a big data,received ${e.input},please provide a valid value`
+                break;
+            case 'too_small':
+                message=`field  ${e.path} provide a small data,received ${e.input},please provide a valid value`
                 break;
             default:
-                message='please provide a valid information'
+                message=`field ${e.path} is invalid data,received ${e.input}`
         }
         return {
             message

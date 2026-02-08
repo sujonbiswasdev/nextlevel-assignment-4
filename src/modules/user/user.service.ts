@@ -1,9 +1,7 @@
-import { EnumRoleFilter } from './../../../generated/prisma/commonInputTypes';
-import { error } from "node:console"
-import { Role, Status, User } from "../../../generated/prisma/client"
+import { Account, Role, Status, User } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 import { UserWhereInput } from "../../../generated/prisma/models"
-import z from 'zod';
+import z, { email } from 'zod';
 import { formatZodIssues } from '../../utils/handleZodError';
 
 const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string }, isactivequery: boolean) => {
@@ -45,8 +43,8 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
     }
   });
   return {
-    sucess:true,
-    message:result?"retrieve all user has been sucessfully":"retrieve all user failed",
+    sucess: result ? true : false,
+    message: result ? "retrieve all user has been sucessfully" : "retrieve all user failed",
     data: result,
     totalusers
   }
@@ -88,9 +86,10 @@ const UpdateUserStatus = async (id: string, data: Partial<User>) => {
       }
     })
     return {
-      success:true,
-      message:result.isActive?"your user status has been changed sucessfully":"your user status has been changed fail",
-      result}
+      success: true,
+      message: result.isActive ? "your user status has been changed sucessfully" : "your user status has been changed fail",
+      result
+    }
 
   }
 }
@@ -100,106 +99,143 @@ const getUserprofile = async (id: string) => {
     where: { id }
   })
   return {
-    sucess:true,
-    message:result?`you user profile has been retrieved sucessfully`:`you user profile didn't retrieved`,
+    sucess:  true ,
+    message:  `you user profile has been retrieved sucessfully`,
     result
   }
 
 }
-const UpdateCustomerProfile = async (id: string, data: any) => {
+const UpateUserProfile = async (data: Partial<User & Account>, userid: string) => {
 
-  const userData = z.object({
+  const usersData = z.object({
     name: z.string().optional(),
     image: z.string().optional(),
+    email: z.string().optional(),
+    password: z.string().min(8).optional(),
     phone: z.string().min(10).max(15).optional()
 
   }).strict()
 
-  const parseData = userData.safeParse(data)
+  const parseData = usersData.safeParse(data)
 
   if (!parseData.success) {
-     return {
-      sucess:false,
-       message:"your profile has been updated failed",
-      data:formatZodIssues(parseData.error)
-     }
+    return {
+      sucess: false,
+      message: "your profile updated failed",
+      data: formatZodIssues(parseData.error)
+    }
   }
-  
+
+
   if (!data) {
     throw new Error("your data isn't found,please provide a information")
   }
-  await prisma.user.findUniqueOrThrow({
-    where: { id }
-  })
-  const result = await prisma.user.update({
-    where: {
-      id
-    },
-    data: {
-      name:parseData.data.name,
-      image:parseData.data.image,
-      phone:parseData.data.phone
+  const userinfo = await prisma.user.findUniqueOrThrow({
+    where: { id: userid },
+    include: {
+      accounts: true
     }
   })
+  if (!userinfo) {
+    throw new Error('user data not found')
+  }
+  const isCustomer = userinfo.role == 'Customer'
+  const result = await prisma.user.update({
+    where: { id: userid },
+    data: {
+      name: parseData.data.name,
+      image: parseData.data.image,
+      phone: parseData.data.phone,
+      ...isCustomer ? {} : { email: parseData.data.email },
+      accounts: {
+        updateMany: {
+          where: { userId: userid },
+          data: {
+            password: parseData.data.password
+          }
+        }
+      }
+    }
+  })
+
   return {
-    sucess:true,
-    message:"your profile has been update sucessfully",
+    success:true,
+    message:"your profile has been updated successfully",
     result
   }
 
+
 }
-const ChangeUserRole = async (id: string, userId: string, data: Partial<User>) => {
-  const { role } = data
- const userData= await prisma.user.findUniqueOrThrow({ where: { id } })
- if(!userData){
-  throw new Error("your user data didn't found")
- }
+const ChangeUserRole = async (id: string, data: Partial<User>) => {
+  const roleData = z.object({
+    role: z.enum(['Admin', 'Customer', 'Provider'])
+  }).strict()
+
+  const parseData = roleData.safeParse(data)
+
+  if (!parseData.success) {
+    return {
+      sucess: false,
+      message: "your profile updated failed",
+      data: formatZodIssues(parseData.error)
+    }
+  }
+  const userData = await prisma.user.findUniqueOrThrow({ where: { id } })
+  if (!userData) {
+    throw new Error("your user data didn't found")
+  }
+  if (userData.role == parseData.data.role) {
+    throw new Error(`your status(${parseData.data.role}) already up to date`)
+  }
   const result = await prisma.user.update({
     where: {
       id
     },
     data: {
-      role
+      role: parseData.data.role
     }
   })
   return {
-    sucess:true,
-    message:result?`your user role has been changed sucessfully`:`your user role(${role}) changed fail`,
+    sucess: true,
+    message:  `your user role (${parseData.data.role}) has been changed sucessfully`,
     result
   }
 }
+
+
 const DeleteUserProfile = async (id: string) => {
-  const userData =await prisma.user.findUniqueOrThrow({ where: { id } })
-  if(!userData){
+  const userData = await prisma.user.findUniqueOrThrow({ where: { id } })
+  if (!userData) {
     throw new Error("your user data didn't found")
   }
   const result = await prisma.user.delete({
     where: { id }
   })
   return {
-    sucess:true,
-    message:result?"user account delete sucessfully":`"user account delete failed"`,
+    sucess:  true ,
+    message: "user account delete sucessfully",
     result
   }
 
 }
 
 const OwnProfileDelete = async (userid: string) => {
-  const userData =await prisma.user.findUniqueOrThrow({ where: { id:userid } })
-  if(!userData){
-    throw new Error("your user data didn't found")
+  console.log(userid)
+  const userData = await prisma.user.findUniqueOrThrow({ where: { id: userid } })
+  if (!userData) {
+    throw new Error("your user data not found")
   }
-  if(userData.id!==userid){
+  if (userData.id !== userid) {
     throw new Error("your are not authorized")
   }
   const result = await prisma.user.delete({
-    where: { id:userid }
+    where: { id: userid }
   })
   return {
-    sucess:true,
-    message:result?"user own account delete sucessfully":"user own account delete faild",
+    sucess:  true ,
+    message:  "user own account delete sucessfully",
     result
   }
 
 }
-export const UserService = { GetAllUsers, UpdateUserStatus, getUserprofile, UpdateCustomerProfile, DeleteUserProfile, ChangeUserRole,OwnProfileDelete }
+export const UserService = { GetAllUsers, UpdateUserStatus, getUserprofile, UpateUserProfile, DeleteUserProfile, ChangeUserRole, OwnProfileDelete }

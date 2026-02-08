@@ -55,8 +55,7 @@ const UpdateCategory = async (req: Request, res: Response, next: NextFunction) =
         }
         res.status(200).json({result })
     } catch (e: any) {
-        e.customMessage = e.message
-        next(e)
+        next(e.message)
     }
 }
 
