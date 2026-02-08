@@ -1,4 +1,4 @@
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 import { authService } from "./auth.service"
 
 const getCurrentUser = async (req: Request, res: Response) => {
@@ -13,7 +13,6 @@ const getCurrentUser = async (req: Request, res: Response) => {
         res.status(400).json({ sucess: false, message: "current user get failed" })
     }
 }
-
 export const authController = {
-    getCurrentUser
+    getCurrentUser 
 }

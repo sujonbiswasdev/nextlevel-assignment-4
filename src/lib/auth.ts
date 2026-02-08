@@ -30,8 +30,10 @@ export const auth = betterAuth({
                 defaultValue:true
             }
         }
-    }
-    ,
+    },
+    advanced: {
+    cookiePrefix: "assignment-4",
+  },
     emailAndPassword: {
         enabled: true,
     },

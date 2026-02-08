@@ -13,6 +13,9 @@ CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'GLUTEN
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PLACED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED');
 
+-- CreateEnum
+CREATE TYPE "ReviewStatus" AS ENUM ('APPROVED', 'REJECT');
+
 -- CreateTable
 CREATE TABLE "user" (
     "id" TEXT NOT NULL,
@@ -152,7 +155,8 @@ CREATE TABLE "review" (
     "mealId" TEXT NOT NULL,
     "parentId" TEXT,
     "rating" INTEGER NOT NULL,
-    "comment" TEXT,
+    "status" "ReviewStatus" NOT NULL DEFAULT 'APPROVED',
+    "comment" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

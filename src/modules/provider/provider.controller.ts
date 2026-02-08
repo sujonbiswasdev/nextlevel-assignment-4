@@ -3,14 +3,16 @@ import { providerService } from "./provider.service"
 
 const createProvider = async (req: Request, res: Response,next:NextFunction) => {
     try {
-         const users = req.user
-        if (!users) {
+         const user = req.user
+        if (!user) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result =await providerService.createProvider(req.body,users.id)
-        res.status(201).json({message:"provider profile complete sucessfully",result})
+        const result =await providerService.createProvider(req.body,user.id)
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
+        res.status(201).json({result})
     } catch (e:any) {
-        e.Custommessage='provider profile complete failed'
         next(e)
     }
 }
@@ -18,7 +20,11 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
 const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getAllProvider()
-        res.status(200).json({message:"retrieve all provider sucessfully",result})
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result})
+
     } catch (e:any) {
         e.Custommessage='Could not retrieve providers'
         next(e)
@@ -27,7 +33,10 @@ const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
 const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getProviderWithMeals(req.params.id as string)
-        res.status(200).json({message:"retrieve provider profile with menu sucessfully",result})
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result})
     } catch (e:any) {
         e.Custommessage='retrieve provider profile with menu failed'
         next(e)

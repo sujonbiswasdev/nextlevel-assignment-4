@@ -1,43 +1,44 @@
 import { NextFunction, Request, Response } from "express";
 import { UserService } from "./user.service";
-
 const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const search=req.query
-        const result = await UserService.GetAllUsers(search)
-        res.status(200).json({ sucess: true, message: "retrieve all users sucessfully", result })
+        
+        const search = req.query
+        const { isActive } = req.query
+        const isactivequery = isActive ? req.params.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined:undefined
+        const result = await UserService.GetAllUsers(search, isactivequery as boolean)
+        res.status(200).json({result})
     } catch (e: any) {
-        e.Custommessage = e.message || "retrieve all user failed"
         next(e)
     }
 }
 
 const UpdateUserStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
+
+        const user = req.user
+        if (!user) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.UpdateUserStatus(req.params.id as string, users.role as string, req.body)
+        const result = await UserService.UpdateUserStatus(req.params.id as string,req.body)
 
-        res.status(200).json({ sucess: true, message: result?.isActive ? 'user has been activated' : 'user has been suspend', result })
+        res.status(200).json({result })
     } catch (e: any) {
-        e.Custommessage = e.message || "user update failed"
+       e.Custommessage= e.message
         next(e)
     }
 
 }
 
-const getCustomerProfile = async (req: Request, res: Response, next: NextFunction) => {
+const getUserprofile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
+        const user = req.user
+        if (!user) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.getCustomerprofile(req.params.id as string,users.id as string, users.role as string)
-        res.status(201).json({ sucess: true, message: "retrieve user sucessfully", result })
+        const result = await UserService.getUserprofile(req.params.id as string)
+        res.status(201).json({ result })
     } catch (e: any) {
-        e.Custommessage = e.message || "retrieve user failed"
         next(e)
     }
 
@@ -46,46 +47,72 @@ const getCustomerProfile = async (req: Request, res: Response, next: NextFunctio
 
 const UpateCustomerProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
+        const user = req.user
+        if (!user) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.UpdateCustomerProfile(req.params.id as string, users.role as string, req.body,users.id)
+        const result = await UserService.UpdateCustomerProfile(req.params.id as string,req.body)
 
-        res.status(201).json({ sucess: true, message: "customer profile update sucessfully", result })
+        res.status(200).json({ result })
     } catch (e: any) {
-        e.Custommessage = e.message || "customer profile update failed"
+        e.Custommessage =e.message
+        next(e)
+
+    }
+
+}
+
+const ChangeUserRole = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        }
+        const result = await UserService.ChangeUserRole(req.params.id as string, user.id as string, req.body)
+
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
+
+        res.status(200).json({ result })
+    } catch (e: any) {
         next(e)
     }
 
 }
 
-const DeleteCustomerProfile = async (req: Request, res: Response, next: NextFunction) => {
+
+const DeleteUserProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
+        const user = req.user
+        if (!user) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.DeleteCustomerProfile(req.params.id as string,users.id, users.role as string)
-        res.status(201).json({ sucess: true, message: "customer profile delete sucessfully", result })
+        const result = await UserService.DeleteUserProfile(req.params.id as string)
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
+        res.status(201).json({ result })
     } catch (e: any) {
-        e.Custommessage = "customer profile delete failed"
+        e.Custommessage =e.message|| "customer profile delete failed"
         next(e)
     }
 
 }
 
-const UpdateRoleUsers = async (req: Request, res: Response, next: NextFunction) => {
+const OwnProfileDelete = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = req.user
-        if (!users) {
+        const user = req.user
+        if (!user) {
             return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await UserService.userRoleChange(req.params.id as string,users.id as string, req.body)
-
-        res.status(200).json({ sucess: true, message:"user role change sucessfully", result })
+        const result = await UserService.OwnProfileDelete(user.id as string)
+        res.status(201).json({ result })
+         if(!result.sucess){
+            res.status(400).json({result })
+        }
     } catch (e: any) {
-        e.Custommessage = e.message || "user role change failed"
+        e.Custommessage =e.message
         next(e)
     }
 
@@ -94,8 +121,9 @@ const UpdateRoleUsers = async (req: Request, res: Response, next: NextFunction) 
 export const UserController = {
     GetAllUsers,
     UpdateUserStatus,
-    getCustomerProfile,
+    getUserprofile,
     UpateCustomerProfile,
-    DeleteCustomerProfile,
-    UpdateRoleUsers
+    DeleteUserProfile,
+    ChangeUserRole,
+    OwnProfileDelete
 }

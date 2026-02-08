@@ -1,67 +1,9 @@
 import { DietaryPreference, Meal } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 import { MealWhereInput } from '../../../generated/prisma/models';
+import z from "zod";
+import { formatZodIssues } from "../../utils/handleZodError";
 
-const createMeal = async (data: { meals_name: string, description: string, price: number, isAvailable: boolean, dietaryPreference: DietaryPreference, category_name: string, cuisine: string }, userid: string) => {
-    const providerid = await prisma.user.findUniqueOrThrow({ where: { id: userid }, include: { provider: true } })
-    const category = await prisma.category.findUniqueOrThrow(
-        {
-            where: {
-                name: data.category_name
-            }
-        }
-    )
-    return await prisma.meal.create({
-        data: {
-            meals_name: data.meals_name,
-            description: data.description,
-            price: data.price,
-            isAvailable: data.isAvailable,
-            dietaryPreference: data.dietaryPreference,
-            category_name: data.category_name,
-            cuisine: data.cuisine,
-            providerId: providerid.provider?.id as string,
-
-        }
-    })
-
-}
-
-const UpdateMeals = async (data: Partial<Meal>, mealid: string) => {
-    if (!mealid) {
-        throw new Error("meals not found")
-    }
-    const existmeal = await prisma.meal.findUniqueOrThrow({ where: { id: mealid } })
-    if (existmeal.category_name === data.category_name) {
-        throw new Error("category_name is already up to date.")
-    }
-    return await prisma.meal.update({
-        where: {
-            id: mealid
-        },
-        data
-
-    })
-
-}
-
-const DeleteMeals = async (mealid: string) => {
-
-    const existmeal = await prisma.meal.findUniqueOrThrow({
-        where: {
-            id: mealid
-        }
-    })
-    if (existmeal?.id !== mealid) {
-        throw new Error('mealid is invalid,please check your mealid')
-    }
-    return await prisma.meal.delete({
-        where: {
-            id: mealid
-        }
-    })
-
-}
 
 const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
     const andConditions: MealWhereInput[] | MealWhereInput = []
@@ -131,20 +73,23 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
     const total = await prisma.meal.count()
 
     return {
+        success: true,
+        message: allpost ? `retrieve all meals has been successfully` : `retrieve all meals failed`,
         data: allpost,
         pagination: {
             total,
             page,
             limit,
             totalpage: Math.ceil(total / limit!)
-        }
+        },
+
     }
 
 
 }
 
 const getSinglemeals = async (id: string) => {
-    return await prisma.meal.findUniqueOrThrow({
+    const result = await prisma.meal.findUniqueOrThrow({
         where: {
             id
         },
@@ -165,7 +110,133 @@ const getSinglemeals = async (id: string) => {
             }
         }
     })
+
+
+    return {
+        success: true,
+        message: result ? `retrieve single meals has been successfully` : `retrieve single meals failed`,
+        data: result,
+    }
 }
+
+const createMeal = async (data: unknown, userid: string) => {
+    const providerid = await prisma.user.findUnique({ where: { id: userid }, include: { provider:{select:{id:true}} } })
+      if(!providerid){
+        throw new Error('provider not found')
+    }
+    const mealsData = z.object({
+        meals_name: z.string(),
+        description:z.string().optional(),
+        price:z.number(),
+        isAvailable:z.boolean().optional(),
+        dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
+        category_name:z.string(),
+        cuisine:z.string(),
+        status:z.enum(['PENDING','APPROVED','REJECTED']).default('PENDING')
+    }).strict()
+    const parseData = mealsData.safeParse(data)
+    if (!parseData.success) {
+        return {
+            success: false,
+            message: `your provided data is invalid`,
+            data: formatZodIssues(parseData.error)
+        }
+    }
+   const categoryCheck= await prisma.category.findFirst(
+        {
+            where: {
+                name: parseData.data.category_name
+            }
+        }
+    )
+    if(!categoryCheck){
+        throw new Error("category not found")
+    }
+    const validData=parseData.data
+    const result = await prisma.meal.create({
+        data: {
+            ...validData,
+            providerId:providerid!.provider!.id
+        }
+    })
+
+    return {
+        success: true,
+        message: result ? `your meals has been created` : `your meals didn't created`,
+        data: result,
+    }
+}
+
+const UpdateMeals = async (data:unknown, mealid: string) => {
+    const {category_name}=data as any
+        const mealsData = z.object({
+        meals_name: z.string(),
+        description:z.string().optional(),
+        price:z.number(),
+        isAvailable:z.boolean().optional(),
+        dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
+        cuisine:z.string(),
+        status:z.enum(['PENDING','APPROVED','REJECTED']).default('PENDING')
+    }).strict()
+    const parseData = mealsData.safeParse(data)
+    if (!parseData.success) {
+        return {
+            success: false,
+            message: `your provided data is invalid`,
+            data: formatZodIssues(parseData.error)
+        }
+    }
+    
+    if (!mealid) {
+        throw new Error("meals not found")
+    }
+    const existmeal = await prisma.meal.findUniqueOrThrow({ where: { id: mealid } })
+    if (existmeal.category_name === category_name) {
+        throw new Error("category_name is already up to date.")
+    }
+    const result = await prisma.meal.update({
+        where: {
+            id: mealid
+        },
+        data:{
+            ...parseData.data,
+        }
+
+    })
+
+      return {
+        success: true,
+        message: result ? `your meals has been updated` : `your meals didn't changed`,
+        data: result,
+    }
+
+}
+
+const DeleteMeals = async (mealid: string) => {
+
+    const existmeal = await prisma.meal.findUniqueOrThrow({
+        where: {
+            id: mealid
+        }
+    })
+    if (existmeal?.id !== mealid) {
+        throw new Error('mealid is invalid,please check your mealid')
+    }
+    const result = await prisma.meal.delete({
+        where: {
+            id: mealid
+        }
+    })
+
+      return {
+        success: true,
+        message: result ? `your meals has been deleted sucessfully` : `your meals  delete fail`,
+        data: result,
+    }
+
+}
+
+
 export const mealService = {
     createMeal,
     UpdateMeals,
