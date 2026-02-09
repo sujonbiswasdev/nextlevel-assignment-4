@@ -14,7 +14,7 @@ const createMeal = async (req: Request, res: Response, next: NextFunction) => {
         }
         res.status(201).json({ result })
     } catch (e: any) {
-        next(e)
+        next(e.message)
     }
 }
 
