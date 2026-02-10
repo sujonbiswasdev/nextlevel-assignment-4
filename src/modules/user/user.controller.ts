@@ -7,7 +7,7 @@ const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
         const { isActive } = req.query
         const isactivequery = isActive ? req.params.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined:undefined
         const result = await UserService.GetAllUsers(search, isactivequery as boolean)
-          if(!result.sucess){
+          if(!result.success){
             res.status(400).json({result })
         }
         res.status(200).json({result})
@@ -21,7 +21,7 @@ const UpdateUserStatus = async (req: Request, res: Response, next: NextFunction)
 
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.UpdateUserStatus(req.params.id as string,req.body)
           if(!result){
@@ -40,10 +40,10 @@ const getUserprofile = async (req: Request, res: Response, next: NextFunction) =
     try {
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.getUserprofile(req.params.id as string)
-          if(!result.sucess){
+          if(!result.success){
             res.status(400).json({result })
         }
         res.status(201).json({ result })
@@ -58,10 +58,10 @@ const UpateUserProfile = async (req: Request, res: Response, next: NextFunction)
     try {
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.UpateUserProfile(req.body,user.id as string)
-          if(!result?.sucess){
+          if(!result?.success){
             res.status(400).json({result })
         }
 
@@ -78,10 +78,10 @@ const ChangeUserRole = async (req: Request, res: Response, next: NextFunction) =
     try {
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.ChangeUserRole(req.params.id as string, req.body)
-         if(!result.sucess){
+         if(!result.success){
           return res.status(400).json({result })
         }
          return res.status(200).json({ result })
@@ -97,10 +97,10 @@ const DeleteUserProfile = async (req: Request, res: Response, next: NextFunction
     try {
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.DeleteUserProfile(req.params.id as string)
-         if(!result.sucess){
+         if(!result.success){
             res.status(400).json({result })
         }
         res.status(201).json({ result })
@@ -115,10 +115,10 @@ const OwnProfileDelete = async (req: Request, res: Response, next: NextFunction)
         console.log('lkdsjfsdjfljslkdfjlkdsjfa')
         const user = req.user
         if (!user) {
-            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await UserService.OwnProfileDelete(user.id as string)
-         if(!result.sucess){
+         if(!result.success){
             res.status(400).json({result })
         }
            res.status(201).json({ result })

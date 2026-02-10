@@ -10,11 +10,32 @@ const getCurrentUser = async (id: string) => {
     })
 
     return {
-        sucess:true,
-        message:result?`current user retrieve successfully`:`current user retrieve failed`,
+        success:true,
+        message:`current user retrieve successfully`,
+        result
+    }
+}
+
+const signoutUser = async (id: string,cookies:any,headers:any) => {
+    const result= await prisma.user.findUniqueOrThrow({
+        where: {
+            id
+        }
+    })
+
+    await auth.api.signOut({
+    headers: {
+        cookie:headers.cookie,
+      },
+    });
+
+    return {
+        success:true,
+        message:`current user signout successfully`,
         result
     }
 }
 export const authService = {
     getCurrentUser,
+    signoutUser
 }

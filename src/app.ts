@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import cookieParser from "cookie-parser";
 import { auth } from './lib/auth';
 import { toNodeHandler } from "better-auth/node";
 import { authRouter } from './modules/auth/auth.route';
@@ -17,6 +18,7 @@ import { StatsRouter } from './modules/stats/stats.route';
 const app = express()
 // middleware
 app.use(express.json());
+app.use(cookieParser())
 
 // cors
 app.use(cors({

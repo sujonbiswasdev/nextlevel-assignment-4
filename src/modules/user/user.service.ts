@@ -43,8 +43,8 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
     }
   });
   return {
-    sucess: result ? true : false,
-    message: result ? "retrieve all user has been sucessfully" : "retrieve all user failed",
+    success: result ? true : false,
+    message: result ? "retrieve all user has been successfully" : "retrieve all user failed",
     data: result,
     totalusers
   }
@@ -87,7 +87,7 @@ const UpdateUserStatus = async (id: string, data: Partial<User>) => {
     })
     return {
       success: true,
-      message: result.isActive ? "your user status has been changed sucessfully" : "your user status has been changed fail",
+      message: result.isActive ? "your user status has been changed successfully" : "your user status has been changed fail",
       result
     }
 
@@ -99,8 +99,8 @@ const getUserprofile = async (id: string) => {
     where: { id }
   })
   return {
-    sucess:  true ,
-    message:  `you user profile has been retrieved sucessfully`,
+    success:  true ,
+    message:  `you user profile has been retrieved successfully`,
     result
   }
 
@@ -120,7 +120,7 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
 
   if (!parseData.success) {
     return {
-      sucess: false,
+      success: false,
       message: "your profile updated failed",
       data: formatZodIssues(parseData.error)
     }
@@ -175,7 +175,7 @@ const ChangeUserRole = async (id: string, data: Partial<User>) => {
 
   if (!parseData.success) {
     return {
-      sucess: false,
+      success: false,
       message: "your profile updated failed",
       data: formatZodIssues(parseData.error)
     }
@@ -196,8 +196,8 @@ const ChangeUserRole = async (id: string, data: Partial<User>) => {
     }
   })
   return {
-    sucess: true,
-    message:  `your user role (${parseData.data.role}) has been changed sucessfully`,
+    success: true,
+    message:  `your user role (${parseData.data.role}) has been changed successfully`,
     result
   }
 }
@@ -212,8 +212,8 @@ const DeleteUserProfile = async (id: string) => {
     where: { id }
   })
   return {
-    sucess:  true ,
-    message: "user account delete sucessfully",
+    success:  true ,
+    message: "user account delete successfully",
     result
   }
 
@@ -232,8 +232,8 @@ const OwnProfileDelete = async (userid: string) => {
     where: { id: userid }
   })
   return {
-    sucess:  true ,
-    message:  "user own account delete sucessfully",
+    success:  true ,
+    message:  "user own account delete successfully",
     result
   }
 

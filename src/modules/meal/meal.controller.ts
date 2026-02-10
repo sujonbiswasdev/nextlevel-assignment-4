@@ -6,7 +6,7 @@ const createMeal = async (req: Request, res: Response, next: NextFunction) => {
     try {
        const user = req.user
         if (!user) {
-           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await mealService.createMeal(req.body, user.id)
         if(!result.success){

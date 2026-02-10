@@ -55,8 +55,8 @@ const CreateReviews = async (customerid: string, mealid: string, data: { rating:
     })
 
      return {
-        sucess: true,
-        message:`your review has been created sucessfully`,
+        success: true,
+        message:`your review has been created successfully`,
         result
     }
 
@@ -102,8 +102,8 @@ const updateReview = async (reviewId: string, data: { comment?: string,rating?:n
         }
     })
        return {
-        sucess: true,
-        message: result ? `your review update sucessfully` : `your review didn't updated`,
+        success: true,
+        message: result ? `your review update successfully` : `your review didn't updated`,
         result
     }
 }
@@ -130,8 +130,8 @@ const deleteReview = async (reviewid: string, authorid: string) => {
     })
 
         return {
-        sucess: true,
-        message:`your review delete sucessfully`,
+        success: true,
+        message:`your review delete successfully`,
         result
     }
 }
@@ -147,7 +147,7 @@ const getReviewByid = async (reviewid: string) => {
     })
 
       return {
-        sucess: true,
+        success: true,
         message:`Review retrieved successfully. `,
         result
     }
@@ -194,7 +194,7 @@ const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
     })
 
        return {
-        sucess: true,
+        success: true,
         message: result ? `Review status update successfully. ` : `Review status update unsuccessfully.`,
         result
     }

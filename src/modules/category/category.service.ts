@@ -24,7 +24,7 @@ const CreateCategory = async (data: { name: string }, adminId: string) => {
   })
 
     return {
-    sucess:true,
+    success:true,
     message:`your category has been created`,
     result
   }
@@ -36,7 +36,7 @@ const getCategory = async () => {
   const result = await prisma.category.findMany({ include: { meals: true, user: true },orderBy:{name:'desc'} })
   return {
     success:true,
-    message: `retrieve all category sucessfully`,
+    message: `retrieve all category successfully`,
     result
   }
 
@@ -48,8 +48,8 @@ const SingleCategory = async (id: string) => {
     include: { meals: true, user: true }
   })
   return {
-    sucess: true,
-    message: `retrieve single category sucessfully`,
+    success: true,
+    message: `retrieve single category successfully`,
     result
   }
 
@@ -94,7 +94,7 @@ const DeleteCategory = async (id: string) => {
   })
   return {
     success:true,
-    message:`your category data sucessfully`,
+    message:`your category data successfully`,
     result}
 
 }

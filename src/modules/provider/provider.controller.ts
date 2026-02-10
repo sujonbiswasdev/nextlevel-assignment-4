@@ -5,10 +5,10 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
     try {
          const user = req.user
         if (!user) {
-           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result =await providerService.createProvider(req.body,user.id)
-         if(!result.sucess){
+         if(!result.success){
             res.status(400).json({result })
         }
         res.status(201).json({result})
@@ -20,7 +20,7 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
 const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getAllProvider()
-         if(!result.sucess){
+         if(!result.success){
             res.status(400).json({result })
         }
         res.status(200).json({result})
@@ -32,7 +32,7 @@ const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
 const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getProviderWithMeals(req.params.id as string)
-         if(!result.sucess){
+         if(!result.success){
             res.status(400).json({result })
         }
         res.status(200).json({result})
@@ -45,7 +45,7 @@ const UpateProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const user = req.user
         if (!user) {
-           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result =await providerService.UpateProviderProfile(req.body,user.id)
          if(!result.success){

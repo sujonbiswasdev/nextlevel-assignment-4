@@ -15,7 +15,7 @@ const createProvider = async (data: unknown, userId: string) => {
     const parseData=providerData.safeParse(data)
     if(!parseData.data){
         return {
-            sucess:false,
+            success:false,
             message:`your provided data is invalid`,
             data:formatZodIssues(parseData.error)
         }
@@ -31,7 +31,7 @@ const createProvider = async (data: unknown, userId: string) => {
         }
     })
     return {
-        sucess:true,
+        success:true,
         message:`your provider profile has beed created`,
         result
     };
@@ -46,8 +46,8 @@ const getAllProvider = async () => {
       }
     })
     return {
-        sucess:result?true:false,
-        message:result?`provider data has been retrieved sucessfully`:`provider data retrieve fail`,
+        success:result?true:false,
+        message:result?`provider data has been retrieved successfully`:`provider data retrieve fail`,
         result
     }
 }
@@ -73,8 +73,8 @@ const getProviderWithMeals = async (id: string) => {
 
     })
     return {
-        sucess:true,
-        message:`retrieve provider data with meals sucessfully`,
+        success:true,
+        message:`retrieve provider data with meals successfully`,
         result
     }
 }
@@ -92,7 +92,7 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
 
   if (!parseData.success) {
     return {
-      sucess: false,
+      success: false,
       message: "your provider profile updated failed",
       data: formatZodIssues(parseData.error)
     }
