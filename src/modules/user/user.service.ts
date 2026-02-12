@@ -4,7 +4,7 @@ import { UserWhereInput } from "../../../generated/prisma/models"
 import z, { email } from 'zod';
 import { formatZodIssues } from '../../utils/handleZodError';
 
-const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string }, isactivequery: boolean) => {
+const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string }, isactivequery: boolean,page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
   const andCondition: UserWhereInput[] = []
   if (typeof data.email == 'string') {
     andCondition.push({
@@ -26,6 +26,8 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
   }
 
   const result = await prisma.user.findMany({
+    take:limit,
+    skip,
     where: {
       AND: andCondition
 
@@ -34,7 +36,7 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
       provider: true,
     },
     orderBy: {
-      createdAt: 'desc'
+      [sortBy!]: sortOrder
     }
   })
   const totalusers = await prisma.user.count({
@@ -43,10 +45,15 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
     }
   });
   return {
-    success: result ? true : false,
-    message: result ? "retrieve all user has been successfully" : "retrieve all user failed",
+    success:  true ,
+    message: "retrieve all user has been successfully" ,
     data: result,
-    totalusers
+    pagination: {
+            totalusers,
+            page,
+            limit,
+            totalpage: Math.ceil(totalusers / limit!)
+        },
   }
 }
 

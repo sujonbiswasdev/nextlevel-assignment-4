@@ -93,6 +93,7 @@ const getcategoryStats=async(req:Request,res:Response,next:NextFunction)=>{
         }
         res.status(200).json({success:true,message:"retrieve category stats successfully",result})
     } catch (error:any) {
+     
         next(error)
     }
 }

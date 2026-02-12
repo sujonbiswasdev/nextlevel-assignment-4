@@ -130,9 +130,38 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
 
 }
 
+
+const getOwnProviderProfile = async (userId:string) => {
+    const result = await prisma.user.findUniqueOrThrow({
+      where:{
+        id:userId
+      },
+      include:{
+        provider:{
+          select:{
+            id:true,
+            restaurantName:true,
+            createdAt:true
+          }
+        },
+        category:{
+          select:{
+            id:true,
+            name:true
+          }
+        }
+      },
+    })
+    return {
+        success:true,
+        message:` retrieved own provider profile successfully`,
+        result
+    }
+}
 export const providerService = {
     createProvider,
     getAllProvider,
     getProviderWithMeals,
-    UpateProviderProfile
+    UpateProviderProfile,
+    getOwnProviderProfile
 }

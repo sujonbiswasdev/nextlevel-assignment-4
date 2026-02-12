@@ -247,9 +247,10 @@ const getcategoryStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
     return await prisma.$transaction(async (tx) => {
-        const [totalcategory, mealsPerCategory] =
+        const [totalcategory,totalcategory_name, mealsPerCategory] =
             await Promise.all([
                 await tx.category.count(),
+                await tx.category.findMany({select:{name:true}}),
                 await tx.meal.groupBy({
                     by: ['category_name'], _count: {
                         _all: true
@@ -258,6 +259,7 @@ const getcategoryStats = async (adminid: string) => {
             ])
         return {
             totalcategory,
+            totalcategory_name,
             mealsPerCategory
         }
     })

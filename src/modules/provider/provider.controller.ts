@@ -57,4 +57,22 @@ const UpateProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
     }
 }
 
-export const providerController={createProvider,gelAllprovider,getProviderWithMeals,UpateProviderProfile}
+
+const getOwnProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const user = req.user
+        if (!user) {
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
+        }
+        const result =await providerService.getOwnProviderProfile(user.id)
+         if(!result.success){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result})
+    } catch (e:any) {
+        next(e)
+    }
+}
+
+
+export const providerController={createProvider,gelAllprovider,getProviderWithMeals,UpateProviderProfile,getOwnProviderProfile}

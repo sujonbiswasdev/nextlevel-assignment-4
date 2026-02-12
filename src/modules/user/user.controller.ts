@@ -1,12 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import { UserService } from "./user.service";
+import paginationSortingHelper from "../helpers/paginationHelping";
 const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
         
         const search = req.query
         const { isActive } = req.query
         const isactivequery = isActive ? req.params.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined:undefined
-        const result = await UserService.GetAllUsers(search, isactivequery as boolean)
+        const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
+        const result = await UserService.GetAllUsers(search, isactivequery as boolean,page,limit,skip,sortBy,sortOrder)
           if(!result.success){
             res.status(400).json({result })
         }

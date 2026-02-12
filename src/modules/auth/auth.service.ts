@@ -3,17 +3,11 @@ import { auth } from "../../lib/auth"
 import { prisma } from "../../lib/prisma"
 
 const getCurrentUser = async (id: string) => {
-    const result= await prisma.user.findUniqueOrThrow({
+    return await prisma.user.findUniqueOrThrow({
         where: {
             id
         }
     })
-
-    return {
-        success:true,
-        message:`current user retrieve successfully`,
-        result
-    }
 }
 
 const signoutUser = async (id: string,cookies:any,headers:any) => {

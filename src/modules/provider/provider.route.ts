@@ -6,6 +6,7 @@ import { providerController } from "./provider.controller";
 const router=Router()
 router.post('/provider/profile',auth([UserRoles.Provider]),providerController.createProvider)
 router.put('/providers/update',auth([UserRoles.Provider]),providerController.UpateProviderProfile)
+router.get('/provider/own',auth([UserRoles.Provider]),providerController.getOwnProviderProfile)
 // public
 router.get('/providers',providerController.gelAllprovider)
 router.get('/providers/:id',providerController.getProviderWithMeals)
