@@ -6,7 +6,7 @@ import auth from "../../middleware/auth";
 const router=Router()
 
 router.post("/admin/category",auth([UserRoles.Admin]),CategoryController.CreateCategory)
-router.get("/admin/category",auth([UserRoles.Admin]),CategoryController.getCategory)
+router.get("/admin/category",CategoryController.getCategory)
 router.get("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.SingleCategory)
 router.put("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.UpdateCategory)
 router.delete("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.DeleteCategory)

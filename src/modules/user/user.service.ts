@@ -120,7 +120,6 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
     email: z.string().optional(),
     password: z.string().min(8).optional(),
     phone: z.string().min(10).max(15).optional()
-
   }).strict()
 
   const parseData = usersData.safeParse(data)
@@ -133,7 +132,7 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
     }
   }
 
-
+  
   if (!data) {
     throw new Error("your data isn't found,please provide a information")
   }

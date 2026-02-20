@@ -23,7 +23,8 @@ app.use(cookieParser())
 // cors
 app.use(cors({
     origin:"http://localhost:3000",
-    credentials:true
+    credentials:true,
+    
 }))
 // meal
 app.use("/api",mealRouter.router)
@@ -44,7 +45,7 @@ app.use('/api',ReviewsRouter.router)
 
 //stats
 app.use('/api',StatsRouter.router)
-
+// auth
 app.use("/api/auth",authRouter.router)
 
 

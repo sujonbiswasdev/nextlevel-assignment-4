@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express"
 import { mealService } from "./meal.service"
-import paginationSortingHelper from "../helpers/paginationHelping"
+import paginationSortingHelper from "../../helpers/paginationHelping"
 
 const createMeal = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -10,9 +10,9 @@ const createMeal = async (req: Request, res: Response, next: NextFunction) => {
         }
         const result = await mealService.createMeal(req.body, user.id)
         if(!result.success){
-            res.status(400).json({result })
+          return  res.status(400).json({result })
         }
-        res.status(201).json({ result })
+        return res.status(201).json({ result })
     } catch (e: any) {
         next(e.message)
     }

@@ -71,22 +71,22 @@ const getmealsStats = async (adminid: string) => {
     }
 
     return await prisma.$transaction(async (tx) => {
-        const [totalmeals, totalavailabemeals, totalunavailabemeals, totalapprovedmeals, totalpendingmeals, totalrejectedmeals] =
+        const [totalmeals, totalavailabemeals, totalunavailabemeals] =
             await Promise.all([
                 await tx.meal.count(),
                 await tx.meal.count({ where: { isAvailable: true } }),
                 await tx.meal.count({ where: { isAvailable: false } }),
-                await tx.meal.count({ where: { status: 'APPROVED' } }),
-                await tx.meal.count({ where: { status: 'PENDING' } }),
-                await tx.meal.count({ where: { status: 'REJECTED' } }),
+                // await tx.meal.count({ where: { status: 'APPROVED' } }),
+                // await tx.meal.count({ where: { status: 'PENDING' } }),
+                // await tx.meal.count({ where: { status: 'REJECTED' } }),
             ])
         return {
             totalmeals,
             totalavailabemeals,
             totalunavailabemeals,
-            totalapprovedmeals,
-            totalpendingmeals,
-            totalrejectedmeals
+            // totalapprovedmeals,
+            // totalpendingmeals,
+            // totalrejectedmeals
         }
     })
 }
@@ -338,22 +338,22 @@ const getProvidermealsStats = async (userid: string) => {
     }
 
     return await prisma.$transaction(async (tx) => {
-        const [totalmeals, totalavailabemeals, totalunavailabemeals, totalapprovedmeals, totalpendingmeals, totalrejectedmeals] =
+        const [totalmeals, totalavailabemeals, totalunavailabemeals] =
             await Promise.all([
                 await tx.meal.count({where:{providerId:existuser.provider!.id}}),
                 await tx.meal.count({ where: {providerId:existuser.provider!.id, isAvailable: true } }),
                 await tx.meal.count({ where: {providerId:existuser.provider!.id, isAvailable: false } }),
-                await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'APPROVED' } }),
-                await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'PENDING' } }),
-                await tx.meal.count({ where: {providerId:existuser.provider!.id, status: 'REJECTED' } }),
+                // await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'APPROVED' } }),
+                // await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'PENDING' } }),
+                // await tx.meal.count({ where: {providerId:existuser.provider!.id, status: 'REJECTED' } }),
             ])
         return {
             totalmeals,
             totalavailabemeals,
             totalunavailabemeals,
-            totalapprovedmeals,
-            totalpendingmeals,
-            totalrejectedmeals
+            // totalapprovedmeals,
+            // totalpendingmeals,
+            // totalrejectedmeals
         }
     })
 }

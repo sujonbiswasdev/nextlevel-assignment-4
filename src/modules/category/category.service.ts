@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma"
 import { formatZodIssues } from "../../utils/handleZodError"
 
 const CreateCategory = async (data: { name: string }, adminId: string) => {
+  console.log(data,adminId,'jkslfjklsdjfkjsdfyt')
   const categoryData = z.object({
     name: z.string()
   }).strict()
@@ -22,7 +23,6 @@ const CreateCategory = async (data: { name: string }, adminId: string) => {
       adminId: adminId
     }
   })
-
     return {
     success:true,
     message:`your category has been created`,

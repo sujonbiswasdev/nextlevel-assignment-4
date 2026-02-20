@@ -9,9 +9,9 @@ const CreateCategory = async (req: Request, res: Response, next: NextFunction) =
         }
         const result = await categoryService.CreateCategory(req.body, user.id as string)
           if(!result.success){
-            res.status(400).json({result })
+           return res.status(400).json({result })
         }
-        res.status(201).json({ result })
+       return res.status(201).json({ result })
     } catch (e: any) {
         next(e)
     }

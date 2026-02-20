@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { UserService } from "./user.service";
-import paginationSortingHelper from "../helpers/paginationHelping";
+import paginationSortingHelper from "../../helpers/paginationHelping";
 const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
         

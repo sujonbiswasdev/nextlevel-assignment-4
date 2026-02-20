@@ -5,7 +5,7 @@ import z from "zod";
 import { formatZodIssues } from "../../utils/handleZodError";
 
 
-const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
+const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string,category_name?:string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
     const andConditions: MealWhereInput[] | MealWhereInput = []
     if (data) {
         andConditions.push({
@@ -26,6 +26,12 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
                     cuisine: {
                         contains: data.cuisine,
                         mode: "insensitive"
+                    }
+                },
+                {
+                    category_name:{
+                        contains:data.category_name,
+                        mode:"insensitive"
                     }
                 }
             ]
@@ -128,14 +134,15 @@ const createMeal = async (data: unknown, userid: string) => {
     const mealsData = z.object({
         meals_name: z.string(),
         description:z.string().optional(),
+        image:z.string(),
         price:z.number(),
         isAvailable:z.boolean().optional(),
         dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
         category_name:z.string(),
-        cuisine:z.string(),
-        status:z.enum(['PENDING','APPROVED','REJECTED']).default('PENDING')
+        cuisine:z.string()
     }).strict()
     const parseData = mealsData.safeParse(data)
+    console.log(parseData,'jdskfsdjf')
     if (!parseData.success) {
         return {
             success: false,

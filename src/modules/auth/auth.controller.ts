@@ -34,7 +34,21 @@ const signoutUser = async (req: Request, res: Response,next:NextFunction) => {
         next(error)
     }
 }
+
+const signup = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        const result = await authService.signup(req.body)
+           if(!result?.success){
+            res.status(400).json({result })
+        }
+        res.status(200).json({ result })
+    } catch (error:any) {
+        console.log(error.message)
+        next(error)
+    }
+}
 export const authController = {
     getCurrentUser ,
-    signoutUser
+    signoutUser,
+    signup
 }

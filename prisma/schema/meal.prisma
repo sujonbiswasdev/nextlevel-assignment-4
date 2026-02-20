@@ -2,13 +2,13 @@ model Meal {
     id                String  @id @default(uuid())
     meals_name              String  @db.VarChar(100)
     description       String? @db.Text
+    image            String?
     price             Int 
     isAvailable       Boolean @default(true)
     dietaryPreference DietaryPreference
     providerId        String
     category_name        String
     cuisine    String
-    status    ApprovalStatus @default(APPROVED)
     createdAt   DateTime        @default(now())
     updatedAt  DateTime   @updatedAt
     //   relationship
@@ -17,12 +17,6 @@ model Meal {
     orderitem      Orderitem[]
     category Category        @relation(fields: [category_name], references: [name], onDelete: Cascade)
     @@map("meal")
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 enum DietaryPreference {

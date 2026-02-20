@@ -8,5 +8,7 @@ router.get('/me',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),a
 
 router.post('/logout',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),authController.signoutUser)
 
+router.post('/register',authController.signup)
+
 
 export const authRouter={router}
