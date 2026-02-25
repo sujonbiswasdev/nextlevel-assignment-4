@@ -8,6 +8,9 @@ CREATE TYPE "Status" AS ENUM ('activate', 'suspend');
 CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'GLUTEN_FREE', 'KETO');
 
 -- CreateEnum
+CREATE TYPE "MealsStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PLACED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED');
 
 -- CreateEnum
@@ -20,6 +23,7 @@ CREATE TABLE "user" (
     "email" TEXT NOT NULL,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT,
+    "bgimage" TEXT,
     "phone" VARCHAR(20),
     "role" "Role" NOT NULL DEFAULT 'Customer',
     "status" "Status" NOT NULL DEFAULT 'activate',
@@ -98,6 +102,7 @@ CREATE TABLE "meal" (
     "providerId" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
     "cuisine" TEXT NOT NULL,
+    "status" "MealsStatus" NOT NULL DEFAULT 'APPROVED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -109,8 +114,11 @@ CREATE TABLE "order" (
     "id" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
+    "first_name" TEXT,
+    "last_name" TEXT,
     "status" "OrderStatus" NOT NULL DEFAULT 'PLACED',
     "totalPrice" INTEGER NOT NULL,
+    "phone" TEXT,
     "address" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

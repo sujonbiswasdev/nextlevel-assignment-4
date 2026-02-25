@@ -18,25 +18,7 @@ const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-const UpdateUserStatus = async (req: Request, res: Response, next: NextFunction) => {
-    try {
 
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.UpdateUserStatus(req.params.id as string,req.body)
-          if(!result){
-            res.status(400).json({result })
-        }
-
-        res.status(200).json({result })
-    } catch (e: any) {
-       e.Custommessage= e.message
-        next(e)
-    }
-
-}
 
 const getUserprofile = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -76,13 +58,13 @@ const UpateUserProfile = async (req: Request, res: Response, next: NextFunction)
 
 }
 
-const ChangeUserRole = async (req: Request, res: Response, next: NextFunction) => {
+const UpdateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = req.user
         if (!user) {
             return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
-        const result = await UserService.ChangeUserRole(req.params.id as string, req.body)
+        const result = await UserService.UpdateUser(req.params.id as string, req.body)
          if(!result.success){
           return res.status(400).json({result })
         }
@@ -132,10 +114,9 @@ const OwnProfileDelete = async (req: Request, res: Response, next: NextFunction)
 
 export const UserController = {
     GetAllUsers,
-    UpdateUserStatus,
+    UpdateUser,
     getUserprofile,
     UpateUserProfile,
     DeleteUserProfile,
-    ChangeUserRole,
     OwnProfileDelete
 }

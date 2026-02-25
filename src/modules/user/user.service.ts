@@ -4,11 +4,16 @@ import { UserWhereInput } from "../../../generated/prisma/models"
 import z, { email } from 'zod';
 import { formatZodIssues } from '../../utils/handleZodError';
 
-const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string }, isactivequery: boolean,page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
+const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string,phone?:string }, isactivequery: boolean,page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
   const andCondition: UserWhereInput[] = []
   if (typeof data.email == 'string') {
     andCondition.push({
       email: data.email
+    })
+  }
+  if (typeof data.phone == 'string') {
+    andCondition.push({
+      email: data.phone
     })
   }
   if (typeof data.emailVerified == 'boolean') {
@@ -54,50 +59,6 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
             limit,
             totalpage: Math.ceil(totalusers / limit!)
         },
-  }
-}
-
-const UpdateUserStatus = async (id: string, data: Partial<User>) => {
-  const { status } = data
-  const statusValue = ["activate", "suspend"]
-  if (!statusValue.includes(status as string)) {
-    throw new Error("please provide a valid status")
-  }
-  const curentUser = await prisma.user.findUniqueOrThrow({
-    where: { id }
-  })
-  if (curentUser.status == status) {
-    throw new Error("user status already up to date")
-  }
-  if (status == 'activate') {
-    const result = await prisma.user.update({
-      where: {
-        id
-      },
-      data: {
-        status: status,
-        isActive: true
-      }
-    })
-    return result
-  }
-  if (status == 'suspend') {
-
-    const result = await prisma.user.update({
-      where: {
-        id
-      },
-      data: {
-        status,
-        isActive: false
-      }
-    })
-    return {
-      success: true,
-      message: result.isActive ? "your user status has been changed successfully" : "your user status has been changed fail",
-      result
-    }
-
   }
 }
 const getUserprofile = async (id: string) => {
@@ -176,9 +137,10 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
 
 
 }
-const ChangeUserRole = async (id: string, data: Partial<User>) => {
+const UpdateUser = async (id: string, data: Partial<User>) => {
   const roleData = z.object({
-    role: z.enum(['Admin', 'Customer', 'Provider'])
+    role: z.enum(['Admin', 'Customer', 'Provider']).optional(),
+    status:z.enum(['activate','suspend']).optional()
   }).strict()
 
   const parseData = roleData.safeParse(data)
@@ -190,7 +152,7 @@ const ChangeUserRole = async (id: string, data: Partial<User>) => {
       data: formatZodIssues(parseData.error)
     }
   }
-  const userData = await prisma.user.findUniqueOrThrow({ where: { id } })
+  const userData = await prisma.user.findUnique({ where: { id } })
   if (!userData) {
     throw new Error("your user data didn't found")
   }
@@ -202,7 +164,8 @@ const ChangeUserRole = async (id: string, data: Partial<User>) => {
       id
     },
     data: {
-      role: parseData.data.role
+      role: parseData.data.role,
+      status:parseData.data.status
     }
   })
   return {
@@ -248,4 +211,4 @@ const OwnProfileDelete = async (userid: string) => {
   }
 
 }
-export const UserService = { GetAllUsers, UpdateUserStatus, getUserprofile, UpateUserProfile, DeleteUserProfile, ChangeUserRole, OwnProfileDelete }
+export const UserService = { GetAllUsers, UpdateUser, getUserprofile, UpateUserProfile, DeleteUserProfile, OwnProfileDelete }

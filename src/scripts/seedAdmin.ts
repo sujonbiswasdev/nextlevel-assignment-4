@@ -16,7 +16,9 @@ const seedAdmin = async () => {
                 name: "admin user",
                 email: process.env.email as string,
                 password: process.env.password as string,
-                role: "Admin"
+                role: "Admin",
+                bgimage:""
+
 
             },
         });
