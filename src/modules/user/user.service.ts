@@ -117,9 +117,11 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
   const usersData = z.object({
     name: z.string().optional(),
     image: z.string().optional(),
+    bgimage:z.string().optional(),
     email: z.string().optional(),
     password: z.string().min(8).optional(),
-    phone: z.string().min(10).max(15).optional()
+    phone: z.string().min(10).max(15).optional(),
+    isActive:z.boolean().optional()
   }).strict()
 
   const parseData = usersData.safeParse(data)
@@ -151,7 +153,9 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
     data: {
       name: parseData.data.name,
       image: parseData.data.image,
+      bgimage:parseData.data.bgimage,
       phone: parseData.data.phone,
+      isActive:parseData.data.isActive,
       ...isCustomer ? {} : { email: parseData.data.email },
       accounts: {
         updateMany: {

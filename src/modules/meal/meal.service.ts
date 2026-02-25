@@ -102,7 +102,11 @@ const getSinglemeals = async (id: string) => {
         },
         include: {
             category: true,
-            provider: true,
+            provider: {
+                include:{
+                    user:true
+                }
+            },
             reviews: {
                 where: {
                     parentId: null
@@ -180,12 +184,14 @@ const UpdateMeals = async (data:unknown, mealid: string) => {
         const mealsData = z.object({
         meals_name: z.string().optional(),
         description:z.string().optional(),
+        image:z.string().optional(),
         price:z.number().optional(),
         isAvailable:z.boolean().optional(),
+        category_name:z.string().optional(),
         dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
         cuisine:z.string().optional(),
-        status:z.enum(['PENDING','APPROVED','REJECTED']).default('PENDING')
-    }).strict()
+        status:z.enum(['PENDING','APPROVED','REJECTED']).default('APPROVED')
+    })
     const parseData = mealsData.safeParse(data)
     if (!parseData.success) {
         return {
@@ -244,11 +250,44 @@ const DeleteMeals = async (mealid: string) => {
 
 }
 
+const getOwnMeals = async (userid: string) => {
+    const result = await prisma.meal.findMany({
+        where: {
+            provider: {
+                userId: userid
+            }
+        },
+        include: {
+            category: true,
+            provider: true,
+            reviews: {
+                where: {
+                    parentId: null
+                },
+                include: {
+                    replies: {
+                        include: {
+                            replies: true
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    return {
+        success: true,
+        message: 'retrieve own meals has been successfully',
+        data: result,
+    }
+}
+
 
 export const mealService = {
     createMeal,
     UpdateMeals,
     DeleteMeals,
     getAllmeals,
-    getSinglemeals
+    getSinglemeals,
+    getOwnMeals
 }

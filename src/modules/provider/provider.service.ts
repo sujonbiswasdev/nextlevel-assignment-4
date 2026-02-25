@@ -61,6 +61,7 @@ const getProviderWithMeals = async (id: string) => {
             id
         },
         include: {
+          user:true,
             meals: {
                 include: {
                     category: true
@@ -132,24 +133,9 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
 
 
 const getOwnProviderProfile = async (userId:string) => {
-    const result = await prisma.user.findUniqueOrThrow({
+    const result = await prisma.providerProfile.findUniqueOrThrow({
       where:{
         id:userId
-      },
-      include:{
-        provider:{
-          select:{
-            id:true,
-            restaurantName:true,
-            createdAt:true
-          }
-        },
-        category:{
-          select:{
-            id:true,
-            name:true
-          }
-        }
       },
     })
     return {

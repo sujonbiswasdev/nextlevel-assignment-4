@@ -9,6 +9,7 @@ model Meal {
     providerId        String
     category_name        String
     cuisine    String
+    status   MealsStatus   @default(APPROVED)
     createdAt   DateTime        @default(now())
     updatedAt  DateTime   @updatedAt
     //   relationship
@@ -25,4 +26,9 @@ enum DietaryPreference {
   VEGETARIAN
   GLUTEN_FREE
   KETO
+}
+enum MealsStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

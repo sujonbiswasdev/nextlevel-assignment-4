@@ -47,8 +47,25 @@ const signup = async (req: Request, res: Response,next:NextFunction) => {
         next(error)
     }
 }
+
+const signin = async (req: Request, res: Response,next:NextFunction) => {
+    try {
+          const cookies = req.cookies;
+        const headers = req.headers;
+        const result = await authService.signin(req.body,cookies,headers)
+           if(!result){
+            res.status(400).json(result)
+        }
+        res.status(200).json({ success: true,
+        message: `user signin sucessfully`, result })
+    } catch (error:any) {
+        error.customMessage=error.message
+        next(error)
+    }
+}
 export const authController = {
     getCurrentUser ,
     signoutUser,
-    signup
+    signup,
+    signin
 }

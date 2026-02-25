@@ -5,8 +5,10 @@ import { mealController } from "./meal.controller";
 
 const router=Router()
 router.get('/meals',mealController.Getallmeals)
-router.get('/meals/:id',mealController.GetSignlemeals)
+router.get('/provider/meals/own',auth([UserRoles.Provider]),mealController.getownmeals)
 router.post('/provider/meals',auth([UserRoles.Provider]),mealController.createMeal)
-router.put('/provider/meals/:id',auth([UserRoles.Provider]),mealController.UpdateMeals)
 router.delete('/provider/meals/:id',auth([UserRoles.Provider]),mealController.DeleteMeals)
+router.put('/provider/meals/:id',auth([UserRoles.Provider]),mealController.UpdateMeals)
+router.get('/meals/:id',mealController.GetSignlemeals)
+
 export const mealRouter={router}

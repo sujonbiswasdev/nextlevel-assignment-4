@@ -9,9 +9,9 @@ const createProvider = async (req: Request, res: Response,next:NextFunction) => 
         }
         const result =await providerService.createProvider(req.body,user.id)
          if(!result.success){
-            res.status(400).json({result })
+           return res.status(400).json({result })
         }
-        res.status(201).json({result})
+       return res.status(201).json(result)
     } catch (e:any) {
         next(e)
     }
@@ -21,9 +21,9 @@ const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getAllProvider()
          if(!result.success){
-            res.status(400).json({result })
+            return res.status(400).json(result )
         }
-        res.status(200).json({result})
+        return res.status(200).json(result)
 
     } catch (e:any) {
         next(e)
@@ -33,9 +33,9 @@ const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
     try {
         const result =await providerService.getProviderWithMeals(req.params.id as string)
          if(!result.success){
-            res.status(400).json({result })
+            return res.status(400).json(result )
         }
-        res.status(200).json({result})
+        return res.status(200).json(result)
     } catch (e:any) {
         next(e)
     }
@@ -49,9 +49,9 @@ const UpateProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
         }
         const result =await providerService.UpateProviderProfile(req.body,user.id)
          if(!result.success){
-            res.status(400).json({result })
+           return res.status(400).json(result )
         }
-        res.status(200).json({result})
+        return res.status(200).json(result)
     } catch (e:any) {
         next(e)
     }
@@ -66,9 +66,9 @@ const getOwnProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
         }
         const result =await providerService.getOwnProviderProfile(user.id)
          if(!result.success){
-            res.status(400).json({result })
+            return res.status(400).json(result )
         }
-        res.status(200).json({result})
+        return res.status(200).json(result)
     } catch (e:any) {
         next(e)
     }

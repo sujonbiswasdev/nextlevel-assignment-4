@@ -23,9 +23,9 @@ const UpdateMeals = async (req: Request, res: Response, next: NextFunction) => {
         const id = req.params.id
         const result = await mealService.UpdateMeals(req.body, id as string)
         if(!result.success){
-            res.status(400).json({result })
+           return res.status(400).json({result })
         }
-        res.status(200).json({  result })
+      return  res.status(200).json({  result })
     } catch (e: any) {
         next(e)
     }
@@ -80,10 +80,27 @@ const GetSignlemeals = async (req: Request, res: Response, next: NextFunction) =
     }
 }
 
+const getownmeals = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return res.status(401).json({ success: false, message: "you are unauthorized" })
+        }
+        const result = await mealService.getOwnMeals(user.id)
+        if(!result.success){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result })
+    } catch (e: any) {
+        next(e)
+    }
+}
+
 export const mealController = {
     createMeal,
     UpdateMeals,
     DeleteMeals,
     Getallmeals,
-    GetSignlemeals
+    GetSignlemeals,
+    getownmeals
 }

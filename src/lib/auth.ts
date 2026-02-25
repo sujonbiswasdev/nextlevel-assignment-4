@@ -4,46 +4,54 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL,
     database: prismaAdapter(prisma, {
         provider: "postgresql", // or "mysql", "postgresql", ...etc
     }),
-      trustedOrigins: [process.env.APP_URL!],
+    trustedOrigins: [process.env.APP_URL!],
     user: {
         additionalFields: {
             role: {
-                type: ["Customer", "Provider","Admin"],
+                type: ["Customer", "Provider", "Admin"],
                 required: false,
                 defaultValue: "Customer"
             },
-            status:{
-                type:["activate","suspend"],
-                required:false,
-                defaultValue:"activate"
+            status: {
+                type: ["activate", "suspend"],
+                required: false,
+                defaultValue: "activate"
             },
-            phone:{
-                type:"string",
-                required:false
+            phone: {
+                type: "string",
+                required: false
             },
-            isActive:{
-                type:"boolean",
-                required:false,
-                defaultValue:true
+            isActive: {
+                type: "boolean",
+                required: false,
+                defaultValue: true
+            },
+             bgimage: {
+                type: "string",
+                required: false,
+                defaultValue: true
             }
         }
     },
     advanced: {
-    cookiePrefix: "assignment-4",
-  },
+        cookiePrefix: "assignment-4",
+         useSecureCookies: true
+    },
     emailAndPassword: {
         enabled: true,
+        autoSignIn:true
     },
     socialProviders: {
-        google: { 
-            accessType: "offline", 
-            prompt: "select_account consent",  
-            clientId: process.env.GOOGLE_CLIENT_ID as string, 
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
-        }, 
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            accessType: "offline",
+            prompt: "select_account consent",
+        },
     },
 });
 

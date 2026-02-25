@@ -3,11 +3,19 @@ import { Order, Orderitem } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { formatZodIssues } from "../../utils/handleZodError";
 
-const CreateOrder = async (mealid: string, payload: Omit<Order & Orderitem, 'id' | 'createdAt' | 'customerId'>, customerId: string) => {
+const CreateOrder = async (payload: Omit<Order & Orderitem, 'id' | 'createdAt' | 'customerId'>, customerId: string) => {
 
     const orderData = z.object({
+        items: z.array(z.object({
+            mealId: z.string(),
+            quantity: z.number().min(1),
+            price: z.number().min(0)
+        })).min(1),
+        phone:z.string(),
         address: z.string(),
-        quantity: z.number().default(0)
+        first_name:z.string().optional(),
+        last_name:z.string().optional()
+
     });
     const parseData = orderData.safeParse(payload)
     if (!parseData.success) {
@@ -18,80 +26,116 @@ const CreateOrder = async (mealid: string, payload: Omit<Order & Orderitem, 'id'
         }
     }
 
-
-    const existingUser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: customerId
-        }
-    })
-    if (!existingUser) {
-        throw new Error("customer user not found")
-    }
-    const mealsData = await prisma.meal.findUnique({ where: { id: mealid }, include: { provider: { select: { id: true } } } })
+    const mealsData = await prisma.meal.findUnique({ where: { id:parseData.data.items[0].mealId }, include: { provider: { select: { id: true } } } })
     if (!mealsData) {
         throw new Error('meals data not found')
     }
     const result = await prisma.order.create({
         data: {
-            customerId: existingUser.id,
+            customerId: customerId,
             providerId: mealsData!.provider!.id!,
+            address:parseData.data.address,
+            phone:parseData.data.phone,
+            first_name:parseData.data.first_name,
+            last_name:parseData.data.last_name,
             orderitem: {
-                create: [
-                    {
-                        price: Number(mealsData!.price),
-                        quantity: parseData.data.quantity,
-                        mealId: mealid,
-
-                    }
-                ]
+                createMany: {
+                    data: parseData.data.items.map((item) => ({
+                        mealId: item.mealId,
+                        price: item.price,
+                        quantity: item.quantity
+                    }))
+                }
             },
-            totalPrice: Number(mealsData!.price) * Number(parseData.data.quantity),
-            address: parseData.data.address
-
+            totalPrice: parseData.data.items.reduce((sum, item) =>
+                sum + (item.price * item.quantity), 0
+            ),
         },
         include: {
-            orderitem: true
+            orderitem: {
+                include: {
+                    meal: {
+                        select: {
+                            meals_name: true,
+                            cuisine: true,
+                            price: true
+                        }
+                    }
+                }
+            },
+            provider: true
         }
     })
 
     return {
-        sucess: true,
+        success: true,
         message: `your order has been created sucessfully`,
         result
     }
 }
 
 const getOwnmealsOrder = async (userid: string) => {
-    const result = await prisma.user.findUniqueOrThrow({
+    const existingUser = await prisma.user.findUnique({
         where: { id: userid },
-        include: {
-            orders: {
-                include: {
-                    orderitem: {select:{orderId:true,quantity:true,meal:{select:{id:true,meals_name:true,description:true,isAvailable:true,category_name:true}},price:true},orderBy:{createdAt:"desc"}},
-                },
-                orderBy:{
-                    createdAt:"desc"
+        include: { provider: true }
+    })
+    if (existingUser?.role == 'Customer') {
+        const result = await prisma.order.findMany({
+            where: {
+                customerId: userid,
+            },
+            include: {
+                orderitem: {
+                    include: {
+                        meal: true
+                    }
+                }
+            },
+            orderBy:{
+                createdAt:"desc"
+            }
+        })
+
+        return {
+            success: true,
+            message: `your own meals orders retrieve successfully`,
+            result
+        }
+    }
+
+    if (existingUser?.role == 'Provider') {
+        const result = await prisma.order.findMany({
+            where: {
+                providerId: existingUser.provider?.id
+            },
+            include: {
+                orderitem: {
+                    include: {
+                        meal: true
+                    }
                 }
             }
-        },
+        })
 
-    })
-
-    return {
-        sucess: true,
-        message:`your own meals orders retrieve successfully`,
-        result
+        return {
+            success: true,
+            message: `your own meals orders retrieve successfully`,
+            result
+        }
     }
 }
 
 const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string) => {
-    console.log(role)
+    console.log(role, 'roledata')
     const { status } = data;
+    console.log(status, 'status')
     const statusValue = ["PLACED", "PREPARING", "READY", "DELIVERED", "CANCELLED"]
     if (!statusValue.includes(status as string)) {
-        throw new Error("please check your status")
+        throw new Error("please check your status or provider your status")
     }
-    const existingOrder = await prisma.order.findUniqueOrThrow({ where: { id } })
+    const existingOrder = await prisma.order.findUnique({ where: { id } })
+    console.log(existingOrder, 'existing order')
+
     if (existingOrder?.status == status) {
         throw new Error("Order status already up to date")
     }
@@ -99,6 +143,9 @@ const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string)
         throw new Error("Customer can status change CANCELLED")
     }
     if (role == 'Customer' && status == 'CANCELLED') {
+        if (existingOrder?.status == 'DELIVERED' || existingOrder?.status == 'PREPARING' || existingOrder?.status == 'READY') {
+            throw new Error("you cannot change because status already running")
+        }
         const result = await prisma.order.update({
             where: {
                 id
@@ -115,7 +162,7 @@ const UpdateOrderStatus = async (id: string, data: Partial<Order>, role: string)
     }
 
     if (role == 'Provider' && status === 'CANCELLED') {
-        throw new Error("please check your role and status")
+        throw new Error("CANCELLED only Customer Change")
     }
 
     if (role == 'Provider') {
@@ -156,7 +203,7 @@ const getAllorder = async (role: string) => {
     })
     return {
         sucess: true,
-        message:`retrieve all order successfully`,
+        message: `retrieve all order successfully`,
         result
     }
 }
@@ -232,12 +279,18 @@ const CustomerRunningAndOldOrder = async (userid: string, status: string) => {
 
 const getSingleOrder = async (id: string) => {
 
-    const result = await prisma.order.findUniqueOrThrow({ where: { id }, include: { orderitem: {select:{
-        meal:true,
-        orderId:true,
-        price:true,
-        quantity:true
-    },orderBy:{createdAt:'desc'}}} })
+    const result = await prisma.order.findUniqueOrThrow({
+        where: { id }, include: {
+            orderitem: {
+                select: {
+                    meal: true,
+                    orderId: true,
+                    price: true,
+                    quantity: true
+                }, orderBy: { createdAt: 'desc' }
+            }
+        }
+    })
     return {
         sucess: true,
         message: `single order retrieve sucessfully`,

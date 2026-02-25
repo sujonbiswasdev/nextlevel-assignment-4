@@ -2,8 +2,11 @@ model Order {
   id         String          @id @default(uuid()) 
   customerId String
   providerId String
+  first_name String?
+  last_name String?
   status     OrderStatus     @default(PLACED)
   totalPrice Int 
+  phone      String? 
   address    String          @db.Text
   createdAt  DateTime        @default(now())
   updatedAt  DateTime   @updatedAt  

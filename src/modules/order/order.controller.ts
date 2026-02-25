@@ -7,8 +7,8 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
         if (!users) {
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
-        const result = await ServiceOrder.CreateOrder(req.params.id as string,req.body, users?.id as string)
-         if(!result.sucess){
+        const result = await ServiceOrder.CreateOrder(req.body, users?.id as string)
+         if(!result.success){
             res.status(400).json({result })
         }
         res.status(201).json({ result })
@@ -26,7 +26,7 @@ const getOwnmealsOrder = async (req: Request, res: Response, next: NextFunction)
            return res.status(401).json({ sucess: false, message: "you are unauthorized" })
         }
         const result = await ServiceOrder.getOwnmealsOrder(users?.id as string)
-         if(!result.sucess){
+         if(!result?.success){
             res.status(400).json({result })
         }
         res.status(200).json({result })
@@ -49,7 +49,8 @@ const UpdateOrderStatus = async (req: Request, res: Response, next: NextFunction
         }
         res.status(200).json({ result })
     } catch (e: any) {
-        next(e.message)
+        e.customMessage=e.message
+        next(e)
 
     }
 
@@ -112,6 +113,10 @@ const CustomerRunningAndOldOrder = async (req: Request, res: Response, next: Nex
 
 const getSingleOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
+         const user = req.user
+        if (!user) {
+           return res.status(401).json({ sucess: false, message: "you are unauthorized" })
+        }
         const result = await ServiceOrder.getSingleOrder(req.params.id as string )
           if(!result?.sucess){
             res.status(400).json({result })

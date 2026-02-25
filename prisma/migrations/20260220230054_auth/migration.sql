@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- AlterTable
+ALTER TABLE "meal" ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'PENDING';

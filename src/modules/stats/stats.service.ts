@@ -92,6 +92,7 @@ const getmealsStats = async (adminid: string) => {
 }
 
 const getordersStats = async (adminid: string) => {
+    
     const existuser = await prisma.user.findUniqueOrThrow({
         where: {
             id: adminid
@@ -321,6 +322,7 @@ const getrevenueProviderStats = async (userid: string) => {
 }
 
 const getProvidermealsStats = async (userid: string) => {
+    console.log('get melass')
     const existuser = await prisma.user.findUniqueOrThrow({
         where: {
             id: userid
@@ -359,6 +361,17 @@ const getProvidermealsStats = async (userid: string) => {
 }
 
 const getProviderordersStats = async (userid: string) => {
+    const todayOrdersData = await prisma.order.findMany({
+  where: {
+    createdAt: {
+      gte: new Date(new Date().setHours(0,0,0,0)),
+      lte: new Date(new Date().setHours(23,59,59,999))
+    }
+  }
+})
+
+console.log("TODAY DATA:", todayOrdersData)
+console.log("TODAY LENGTH:", todayOrdersData.length)
     const existuser = await prisma.user.findUniqueOrThrow({
         where: {
             id: userid
@@ -403,8 +416,10 @@ const getProviderordersStats = async (userid: string) => {
                 await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'READY' } }),
                 await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'DELIVERED' } }),
                 await tx.order.aggregate({where:{providerId:existuser.provider!.id}, _sum: { totalPrice: true } }),
-                await tx.orderitem.aggregate({where:{orderId:orderid.id},_sum: { quantity: true } }),
-                await tx.order.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
+                await tx.orderitem.aggregate({where:{order:{
+                    providerId:existuser.provider!.id
+                }},_sum: { quantity: true } }),
+                await tx.order.count({ where: {providerId:existuser.provider!.id, createdAt: { gte: startOfToday, lte: endOfToday } } }),
             ])
         return {
             totalorders,
