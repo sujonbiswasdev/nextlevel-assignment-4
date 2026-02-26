@@ -3,10 +3,10 @@ import { Category } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 import { formatZodIssues } from "../../utils/handleZodError"
 
-const CreateCategory = async (data: { name: string }, adminId: string) => {
-  console.log(data,adminId,'jkslfjklsdjfkjsdfyt')
+const CreateCategory = async (data: { name: string,image:string }, adminId: string) => {
   const categoryData = z.object({
-    name: z.string()
+    name: z.string(),
+    image:z.string()
   }).strict()
   const parseData = categoryData.safeParse(data)
   if (!parseData.success) {
@@ -19,7 +19,8 @@ const CreateCategory = async (data: { name: string }, adminId: string) => {
   await prisma.user.findUniqueOrThrow({ where: { id: adminId } })
   const result = await prisma.category.create({
     data: {
-      name: data.name,
+      name: parseData.data.name,
+      image:parseData.data.image,
       adminId: adminId
     }
   })
@@ -57,7 +58,8 @@ const SingleCategory = async (id: string) => {
 
 const UpdateCategory = async (id: string, data: Partial<Category>) => {
   const categoryData = z.object({
-    name: z.string()
+    name: z.string(),
+    image:z.string()
   }).strict()
   const parseData = categoryData.safeParse(data)
   if (!parseData.success) {
@@ -78,7 +80,8 @@ const UpdateCategory = async (id: string, data: Partial<Category>) => {
       id
     },
     data: {
-      name
+      name:parseData.data.name,
+      image:parseData.data.image
     }
   })
   return {

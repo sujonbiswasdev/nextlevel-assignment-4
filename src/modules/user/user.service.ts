@@ -140,7 +140,8 @@ const UpateUserProfile = async (data: Partial<User & Account>, userid: string) =
 const UpdateUser = async (id: string, data: Partial<User>) => {
   const roleData = z.object({
     role: z.enum(['Admin', 'Customer', 'Provider']).optional(),
-    status:z.enum(['activate','suspend']).optional()
+    status:z.enum(['activate','suspend']).optional(),
+    email:z.string().optional()
   }).strict()
 
   const parseData = roleData.safeParse(data)
@@ -165,7 +166,8 @@ const UpdateUser = async (id: string, data: Partial<User>) => {
     },
     data: {
       role: parseData.data.role,
-      status:parseData.data.status
+      status:parseData.data.status,
+      email:parseData.data.email
     }
   })
   return {

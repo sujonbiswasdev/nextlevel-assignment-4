@@ -2,6 +2,7 @@ model Category {
   id    String    @id @default(uuid()) 
   adminId String
   name  String @unique @db.VarChar(150)
+  image   String
   createdAt      DateTime @default(now())
   updatedAt  DateTime   @updatedAt
   // relationship

@@ -35,13 +35,14 @@ const signoutUser = async (id: string, cookies: any, headers: any) => {
 
 
 
-const signup = async (data: { name: string, email: string, password: string, image: string, phone: string, role: string, restaurantName: string, address: string, description: string }) => {
+const signup = async (data: { name: string, email: string, password: string, image: string,bgimage:string, phone: string, role: string, restaurantName: string, address: string, description: string }) => {
     const result = await auth.api.signUpEmail({
         body: {
             name: data.name, // required
             email: data.email, // required
             password: data.password, // required
             image: data.image,
+            bgimage:data.bgimage,
             role: data.role as "Provider" | "Customer"
         }
     });

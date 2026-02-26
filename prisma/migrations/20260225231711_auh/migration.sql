@@ -84,6 +84,7 @@ CREATE TABLE "categories" (
     "id" TEXT NOT NULL,
     "adminId" TEXT NOT NULL,
     "name" VARCHAR(150) NOT NULL,
+    "image" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
