@@ -34,19 +34,22 @@ const CreateCategory = async (data: { name: string,image:string }, adminId: stri
 
 
 const getCategory = async () => {
-  const result = await prisma.category.findMany({ include: { meals: true, user: true },orderBy:{name:'desc'} })
-  return {
-    success:true,
-    message: `retrieve all category successfully`,
-    result
-  }
+  const result = await prisma.category.findMany({ include: { meals: {where:{
+    status:"APPROVED"
+  }}, user: true },orderBy:{name:'desc'} })
+  return result
 
 }
 
 const SingleCategory = async (id: string) => {
   const result = await prisma.category.findFirstOrThrow({
     where: { id },
-    include: { meals: true, user: true }
+    include: { meals: {
+      include:{
+        reviews:true
+      }
+    }
+      , user: true }
   })
   return {
     success: true,

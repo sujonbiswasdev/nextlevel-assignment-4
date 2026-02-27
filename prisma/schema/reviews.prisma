@@ -18,5 +18,5 @@ model Review {
 
 enum ReviewStatus {
     APPROVED
-    REJECT
+    REJECTED
 }

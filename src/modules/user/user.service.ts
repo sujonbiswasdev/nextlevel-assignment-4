@@ -57,7 +57,7 @@ const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role
             totalusers,
             page,
             limit,
-            totalpage: Math.ceil(totalusers / limit!)
+            totalpage: Math.ceil(totalusers / limit!) || 1
         },
   }
 }

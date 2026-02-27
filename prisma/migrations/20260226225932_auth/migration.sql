@@ -5,7 +5,10 @@ CREATE TYPE "Role" AS ENUM ('Customer', 'Provider', 'Admin');
 CREATE TYPE "Status" AS ENUM ('activate', 'suspend');
 
 -- CreateEnum
-CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'GLUTEN_FREE', 'KETO');
+CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'ANY', 'GLUTEN_FREE', 'KETO', 'PALEO', 'DAIRY_FREE', 'NUT_FREE', 'LOW_SUGAR');
+
+-- CreateEnum
+CREATE TYPE "Cuisine" AS ENUM ('BANGLEDESHI', 'ITALIAN', 'CHINESE', 'INDIAN', 'MEXICAN', 'THAI', 'JAPANESE', 'FRENCH', 'MEDITERRANEAN', 'AMERICAN', 'MIDDLE_EASTERN');
 
 -- CreateEnum
 CREATE TYPE "MealsStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
@@ -102,7 +105,7 @@ CREATE TABLE "meal" (
     "dietaryPreference" "DietaryPreference" NOT NULL,
     "providerId" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
-    "cuisine" TEXT NOT NULL,
+    "cuisineId" TEXT NOT NULL,
     "status" "MealsStatus" NOT NULL DEFAULT 'APPROVED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

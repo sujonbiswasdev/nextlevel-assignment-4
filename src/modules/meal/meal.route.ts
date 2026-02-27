@@ -10,5 +10,6 @@ router.post('/provider/meals',auth([UserRoles.Provider]),mealController.createMe
 router.delete('/provider/meals/:id',auth([UserRoles.Provider]),mealController.DeleteMeals)
 router.put('/provider/meals/:id',auth([UserRoles.Provider]),mealController.UpdateMeals)
 router.get('/meals/:id',mealController.GetSignlemeals)
+router.put('/admin/meals/:id',auth([UserRoles.Admin]),mealController.updateStatus)
 
 export const mealRouter={router}

@@ -1,11 +1,12 @@
-import { DietaryPreference, Meal } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
-import { MealWhereInput } from '../../../generated/prisma/models';
 import z from "zod";
 import { formatZodIssues } from "../../utils/handleZodError";
+import { MealWhereInput } from "../../../generated/prisma/models";
+import { DietaryPreference } from "../../../generated/prisma/enums";
+import { Meal } from "../../../generated/prisma/client";
 
 
-const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string,category_name?:string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
+const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string, category_name?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
     const andConditions: MealWhereInput[] | MealWhereInput = []
     if (data) {
         andConditions.push({
@@ -29,9 +30,9 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
                     }
                 },
                 {
-                    category_name:{
-                        contains:data.category_name,
-                        mode:"insensitive"
+                    category_name: {
+                        contains: data.category_name,
+                        mode: "insensitive"
                     }
                 }
             ]
@@ -45,7 +46,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
     if (data.price) {
         andConditions.push({
             price: {
-                gte: 10,
+                gte: 1,
                 lte: Number(data.price),
             },
         });
@@ -53,7 +54,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
     if (data.dietaryPreference?.length) {
         const dietaryList = data.dietaryPreference.split(',') as DietaryPreference[];
         andConditions.push({
-            OR: dietaryList.map(item => ({ dietaryPreference: item}))
+            OR: dietaryList.map(item => ({ dietaryPreference: item }))
         });
     }
 
@@ -64,10 +65,29 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
         skip,
         where: {
             AND: andConditions,
+            status:"APPROVED"
         },
         include: {
             provider: true,
-            reviews: true,
+            reviews: {
+                where: {
+                    parentId: null,
+                    rating: { gt: 0 },
+                    status: "APPROVED"
+                },
+                select: {
+                    customer: {
+                        select: {
+                            id: true,
+                            name: true,
+                            image: true,
+                            email: true
+                        }
+                    },
+                    comment: true,
+                    rating: true
+                }
+            },
         },
         orderBy: {
             [sortBy!]: sortOrder
@@ -76,17 +96,17 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 
     })
 
-    const total = await prisma.meal.count({where:{AND:andConditions}})
+    const total = await prisma.meal.count({ where: { AND: andConditions } })
 
     return {
         success: true,
-        message: allpost ? `retrieve all meals has been successfully` : `retrieve all meals failed`,
+        message: `retrieve all meals has been successfully`,
         data: allpost,
         pagination: {
             total,
             page,
             limit,
-            totalpage: Math.ceil(total / limit!)
+            totalpage: Math.ceil(total / limit!) || 1
         },
 
     }
@@ -98,13 +118,14 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 const getSinglemeals = async (id: string) => {
     const result = await prisma.meal.findUniqueOrThrow({
         where: {
-            id
+            id,
+            status:"APPROVED"
         },
         include: {
             category: true,
             provider: {
-                include:{
-                    user:true
+                include: {
+                    user: true
                 }
             },
             reviews: {
@@ -131,22 +152,42 @@ const getSinglemeals = async (id: string) => {
 }
 
 const createMeal = async (data: unknown, userid: string) => {
-    const providerid = await prisma.user.findUnique({ where: { id: userid }, include: { provider:{select:{id:true}} } })
-      if(!providerid){
+    const providerid = await prisma.user.findUnique({ where: { id: userid }, include: { provider: { select: { id: true } } } })
+    if (!providerid) {
         throw new Error('provider not found')
     }
     const mealsData = z.object({
         meals_name: z.string(),
-        description:z.string().optional(),
-        image:z.string(),
-        price:z.number(),
-        isAvailable:z.boolean().optional(),
-        dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
-        category_name:z.string(),
-        cuisine:z.string()
+        description: z.string().optional(),
+        image: z.string(),
+        price: z.number(),
+        isAvailable: z.boolean().optional(),
+        dietaryPreference: z.enum([
+            "HALAL",
+            "VEGAN",
+            "VEGETARIAN",
+            "ANY",
+            "GLUTEN_FREE",
+            "KETO",
+            "PALEO",
+            "DAIRY_FREE",
+            "NUT_FREE",
+            "LOW_SUGAR"
+        ]).default('VEGETARIAN'),
+        category_name: z.string(),
+        cuisine: z.enum(["BANGLEDESHI",
+            "ITALIAN",
+            "CHINESE",
+            "INDIAN",
+            "MEXICAN",
+            "THAI",
+            "JAPANESE",
+            "FRENCH",
+            "MEDITERRANEAN",
+            "AMERICAN",
+            "MIDDLE_EASTERN"]).default('BANGLEDESHI')
     }).strict()
     const parseData = mealsData.safeParse(data)
-    console.log(parseData,'jdskfsdjf')
     if (!parseData.success) {
         return {
             success: false,
@@ -154,21 +195,21 @@ const createMeal = async (data: unknown, userid: string) => {
             data: formatZodIssues(parseData.error)
         }
     }
-   const categoryCheck= await prisma.category.findFirst(
+    const categoryCheck = await prisma.category.findFirst(
         {
             where: {
                 name: parseData.data.category_name
             }
         }
     )
-    if(!categoryCheck){
+    if (!categoryCheck) {
         throw new Error("category not found")
     }
-    const validData=parseData.data
+    const validData = parseData.data
     const result = await prisma.meal.create({
         data: {
             ...validData,
-            providerId:providerid!.provider!.id
+            providerId: providerid!.provider!.id
         }
     })
 
@@ -179,18 +220,15 @@ const createMeal = async (data: unknown, userid: string) => {
     }
 }
 
-const UpdateMeals = async (data:unknown, mealid: string) => {
-    const {category_name}=data as any
-        const mealsData = z.object({
+const UpdateMeals = async (data: unknown, mealid: string) => {
+    const { category_name } = data as any
+    const mealsData = z.object({
         meals_name: z.string().optional(),
-        description:z.string().optional(),
-        image:z.string().optional(),
-        price:z.number().optional(),
-        isAvailable:z.boolean().optional(),
-        category_name:z.string().optional(),
-        dietaryPreference:z.enum(['HALAL','VEGAN','VEGETARIAN','GLUTEN_FREE','KETO']).default('VEGETARIAN'),
-        cuisine:z.string().optional(),
-        status:z.enum(['PENDING','APPROVED','REJECTED']).default('APPROVED')
+        description: z.string().optional(),
+        image: z.string().optional(),
+        price: z.number().optional(),
+        isAvailable: z.boolean().optional(),
+        category_name: z.string().optional(),
     })
     const parseData = mealsData.safeParse(data)
     if (!parseData.success) {
@@ -200,7 +238,7 @@ const UpdateMeals = async (data:unknown, mealid: string) => {
             data: formatZodIssues(parseData.error)
         }
     }
-    
+
     if (!mealid) {
         throw new Error("meals not found")
     }
@@ -212,15 +250,15 @@ const UpdateMeals = async (data:unknown, mealid: string) => {
         where: {
             id: mealid
         },
-        data:{
+        data: {
             ...parseData.data,
         }
 
     })
 
-      return {
+    return {
         success: true,
-        message: result ? `your meals has been updated` : `your meals didn't changed`,
+        message:  `your meals has been updated`,
         data: result,
     }
 
@@ -242,9 +280,9 @@ const DeleteMeals = async (mealid: string) => {
         }
     })
 
-      return {
+    return {
         success: true,
-        message: result ? `your meals has been deleted sucessfully` : `your meals  delete fail`,
+        message:  `your meals has been deleted sucessfully` ,
         data: result,
     }
 
@@ -283,11 +321,42 @@ const getOwnMeals = async (userid: string) => {
 }
 
 
+
+const updateStatus = async (data:Partial<Meal>,mealid:string) => {
+    const {status}=data
+
+    const existmeal = await prisma.meal.findUnique({
+        where: {
+            id: mealid
+        }
+    })
+    if(existmeal?.status===status){
+        throw new Error("meal status already up to date")
+    }
+    if (existmeal?.id !== mealid) {
+        throw new Error('mealid is invalid,please check your mealid')
+    }
+    const result = await prisma.meal.update({
+        where: {
+            id:mealid
+        },
+        data:{
+            status
+        }
+    })
+     return {
+        success: true,
+        message:  `your meal status update sucessfully` ,
+        data: result,
+    }
+}
+
 export const mealService = {
     createMeal,
     UpdateMeals,
     DeleteMeals,
     getAllmeals,
     getSinglemeals,
-    getOwnMeals
+    getOwnMeals,
+    updateStatus
 }

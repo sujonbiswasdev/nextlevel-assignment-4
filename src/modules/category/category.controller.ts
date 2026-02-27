@@ -8,10 +8,10 @@ const CreateCategory = async (req: Request, res: Response, next: NextFunction) =
             return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await categoryService.CreateCategory(req.body, user.id as string)
-          if(!result.success){
-           return res.status(400).json({result })
+        if (!result.success) {
+            return res.status(400).json({ result })
         }
-       return res.status(201).json({ result })
+        return res.status(201).json({ result })
     } catch (e: any) {
         next(e)
     }
@@ -21,11 +21,15 @@ const CreateCategory = async (req: Request, res: Response, next: NextFunction) =
 const getCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
-        const result = await categoryService.getCategory()
-          if(!result.success){
-            res.status(400).json({result })
+        const data = await categoryService.getCategory()
+        if (!data) {
+            return res.status(400).json({ data })
         }
-        res.status(200).json({result })
+       return res.status(200).json({
+            success: true,
+            message: `retrieve all category successfully`,
+            data
+        })
     } catch (e: any) {
         next(e)
     }
@@ -34,8 +38,8 @@ const getCategory = async (req: Request, res: Response, next: NextFunction) => {
 const SingleCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await categoryService.SingleCategory(req.params.id as string)
-          if(!result.success){
-            res.status(400).json({result })
+        if (!result.success) {
+            res.status(400).json({ result })
         }
         res.status(200).json({ result })
     } catch (e: any) {
@@ -50,10 +54,10 @@ const UpdateCategory = async (req: Request, res: Response, next: NextFunction) =
             return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result = await categoryService.UpdateCategory(req.params.id as string, req.body)
-          if(!result.success){
-            res.status(400).json({result })
+        if (!result.success) {
+            res.status(400).json({ result })
         }
-        res.status(200).json({result })
+        res.status(200).json({ result })
     } catch (e: any) {
         next(e.message)
     }
@@ -62,8 +66,8 @@ const UpdateCategory = async (req: Request, res: Response, next: NextFunction) =
 const DeleteCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await categoryService.DeleteCategory(req.params.id as string)
-          if(!result.success){
-            res.status(400).json({result })
+        if (!result.success) {
+            res.status(400).json({ result })
         }
         res.status(200).json({ result })
     } catch (e: any) {
