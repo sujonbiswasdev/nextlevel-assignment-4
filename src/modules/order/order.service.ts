@@ -27,6 +27,7 @@ const CreateOrder = async (payload: Omit<Order & Orderitem, 'id' | 'createdAt' |
     }
 
     const mealsData = await prisma.meal.findUnique({ where: { id:parseData.data.items[0].mealId }, include: { provider: { select: { id: true } } } })
+    
     if (!mealsData) {
         throw new Error('meals data not found')
     }

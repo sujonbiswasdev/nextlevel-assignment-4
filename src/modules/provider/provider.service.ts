@@ -5,79 +5,86 @@ import { formatZodIssues } from "../../utils/handleZodError";
 
 const createProvider = async (data: unknown, userId: string) => {
 
-    const providerData = z.object({
-        restaurantName: z.string(),
-        address:z.string(),
-        description:z.string().optional(),
-        image:z.string().optional()
-    }).strict();
+  const providerData = z.object({
+    restaurantName: z.string(),
+    address: z.string(),
+    description: z.string().optional(),
+    image: z.string().optional()
+  }).strict();
 
-    const parseData=providerData.safeParse(data)
-    if(!parseData.data){
-        return {
-            success:false,
-            message:`your provided data is invalid`,
-            data:formatZodIssues(parseData.error)
-        }
-    }
-    await prisma.user.findUniqueOrThrow({ where: { id: userId } })
-    const result = await prisma.providerProfile.create({
-        data: {
-            restaurantName:parseData.data.restaurantName,
-            address:parseData.data.address,
-            description:parseData.data.description,
-            image:parseData.data.image,
-            userId: userId
-        }
-    })
+  const parseData = providerData.safeParse(data)
+  if (!parseData.data) {
     return {
-        success:true,
-        message:`your provider profile has beed created`,
-        result
-    };
+      success: false,
+      message: `your provided data is invalid`,
+      data: formatZodIssues(parseData.error)
+    }
+  }
+  await prisma.user.findUniqueOrThrow({ where: { id: userId } })
+  const result = await prisma.providerProfile.create({
+    data: {
+      restaurantName: parseData.data.restaurantName,
+      address: parseData.data.address,
+      description: parseData.data.description,
+      image: parseData.data.image,
+      userId: userId
+    }
+  })
+  return {
+    success: true,
+    message: `your provider profile has beed created`,
+    result
+  };
 
 
 }
 
 const getAllProvider = async () => {
-    const result = await prisma.providerProfile.findMany({
-      orderBy:{
-        createdAt:"desc"
-      }
-    })
-    return {
-        success:result?true:false,
-        message:result?`provider data has been retrieved successfully`:`provider data retrieve fail`,
-        result
+  const result = await prisma.providerProfile.findMany({
+    orderBy: {
+      createdAt: "desc"
     }
+  })
+  return {
+    success: result ? true : false,
+    message: result ? `provider data has been retrieved successfully` : `provider data retrieve fail`,
+    result
+  }
 }
 const getProviderWithMeals = async (id: string) => {
-    const existprovider = await prisma.providerProfile.findUniqueOrThrow({ where: { id } })
-    if (existprovider.id !== id) {
-        throw new Error("provider profile not found")
+  const existprovider = await prisma.providerProfile.findUniqueOrThrow({ where: { id } })
+  if (existprovider.id !== id) {
+    throw new Error("provider profile not found")
+  }
+  const provider = await prisma.providerProfile.findUniqueOrThrow({
+    where: { id },
+    include: {
+      user: {
+        include:{
+          reviews:true
+        }
+      },
+      meals: {
+        include: { category: true },
+        orderBy: { createdAt: "desc" }
+      },
     }
-    const result = await prisma.providerProfile.findUniqueOrThrow({
-        where: {
-            id
-        },
-        include: {
-          user:true,
-            meals: {
-                include: {
-                    category: true
-                },
-                orderBy:{
-                  createdAt:'desc'
-                }
-            },
-        },
+  });
 
-    })
-    return {
-        success:true,
-        message:`retrieve provider data with meals successfully`,
-        result
+  const totalReview = provider.user.reviews.length;
+
+  const averageRating = totalReview
+    ? provider.user.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReview
+    : 0;
+  return {
+    success: true,
+    message: "retrieve provider data with meals successfully",
+    result: {
+      ...provider,
+      totalReview:totalReview ||0,
+      averageRating: Number(averageRating.toFixed(1)) || 0
     }
+  };
 }
 
 
@@ -105,8 +112,8 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
   }
   const providerinfo = await prisma.user.findUniqueOrThrow({
     where: { id: userid },
-    include:{
-      provider:true
+    include: {
+      provider: true
     }
   })
   if (!providerinfo) {
@@ -115,16 +122,16 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
   const result = await prisma.providerProfile.update({
     where: { id: providerinfo.provider!.id },
     data: {
-      restaurantName:parseData.data.restaurantName,
+      restaurantName: parseData.data.restaurantName,
       image: parseData.data.image,
-      description:parseData.data.description,
-      address:parseData.data.address,
+      description: parseData.data.description,
+      address: parseData.data.address,
     }
   })
 
   return {
-    success:true,
-    message:"your provider profile has been updated successfully",
+    success: true,
+    message: "your provider profile has been updated successfully",
     result
   }
 
@@ -132,22 +139,22 @@ const UpateProviderProfile = async (data: Partial<ProviderProfile>, userid: stri
 }
 
 
-const getOwnProviderProfile = async (userId:string) => {
-    const result = await prisma.providerProfile.findUniqueOrThrow({
-      where:{
-        id:userId
-      },
-    })
-    return {
-        success:true,
-        message:` retrieved own provider profile successfully`,
-        result
-    }
+const getOwnProviderProfile = async (userId: string) => {
+  const result = await prisma.providerProfile.findUniqueOrThrow({
+    where: {
+      id: userId
+    },
+  })
+  return {
+    success: true,
+    message: ` retrieved own provider profile successfully`,
+    result
+  }
 }
 export const providerService = {
-    createProvider,
-    getAllProvider,
-    getProviderWithMeals,
-    UpateProviderProfile,
-    getOwnProviderProfile
+  createProvider,
+  getAllProvider,
+  getProviderWithMeals,
+  UpateProviderProfile,
+  getOwnProviderProfile
 }

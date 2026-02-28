@@ -5,10 +5,10 @@ model Meal {
     image            String?
     price             Int 
     isAvailable       Boolean @default(true)
-    dietaryPreference DietaryPreference
+    dietaryPreference DietaryPreference @default(HALAL)
     providerId        String
     category_name        String
-    cuisine    String
+    cuisine    Cuisine @default(BANGLEDESHI)
     status   MealsStatus   @default(APPROVED)
     createdAt   DateTime        @default(now())
     updatedAt  DateTime   @updatedAt

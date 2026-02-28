@@ -9,12 +9,21 @@ const CreateCategory = async (data: { name: string,image:string }, adminId: stri
     image:z.string()
   }).strict()
   const parseData = categoryData.safeParse(data)
+  console.log(parseData,'dl')
   if (!parseData.success) {
     return {
       success: false,
       message: `your provided data is invalid`,
       data: formatZodIssues(parseData.error)
     }
+  }
+  const categorydata=await prisma.category.findUnique({
+    where:{
+      name:data.name
+    }
+  })
+  if(categorydata){
+   throw new Error("category already exists")
   }
   await prisma.user.findUniqueOrThrow({ where: { id: adminId } })
   const result = await prisma.category.create({
@@ -61,8 +70,8 @@ const SingleCategory = async (id: string) => {
 
 const UpdateCategory = async (id: string, data: Partial<Category>) => {
   const categoryData = z.object({
-    name: z.string(),
-    image:z.string()
+    name: z.string().optional(),
+    image:z.string().optional()
   }).strict()
   const parseData = categoryData.safeParse(data)
   if (!parseData.success) {

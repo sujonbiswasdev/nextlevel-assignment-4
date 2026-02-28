@@ -9,34 +9,41 @@ import { Meal } from "../../../generated/prisma/client";
 const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string, category_name?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
     const andConditions: MealWhereInput[] | MealWhereInput = []
     if (data) {
-        andConditions.push({
-            OR: [
-                {
-                    meals_name: {
-                        contains: data.meals_name,
-                        mode: "insensitive"
-                    }
-                },
-                {
-                    description: {
-                        contains: data.description,
-                        mode: "insensitive"
-                    }
-                },
-                {
-                    cuisine: {
-                        contains: data.cuisine,
-                        mode: "insensitive"
-                    }
-                },
-                {
-                    category_name: {
-                        contains: data.category_name,
-                        mode: "insensitive"
-                    }
+        const orConditions: any[] = [];
+        if (data.meals_name) {
+            orConditions.push({
+                meals_name: {
+                    contains: data.meals_name,
+                    mode: "insensitive"
                 }
-            ]
-        })
+            });
+        }
+        if (data.description) {
+            orConditions.push({
+                description: {
+                    contains: data.description,
+                    mode: "insensitive"
+                }
+            });
+        }
+        if (data.cuisine) {
+            orConditions.push({
+                cuisine: {
+                    equals: data.cuisine
+                }
+            });
+        }
+        if (data.category_name) {
+            orConditions.push({
+                category_name: {
+                    contains: data.category_name,
+                    mode: "insensitive"
+                }
+            });
+        }
+        if (orConditions.length > 0) {
+            andConditions.push({ OR: orConditions });
+        }
     }
     if (typeof isAvailable === 'boolean') {
         andConditions.push({ isAvailable: isAvailable })
@@ -65,7 +72,7 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
         skip,
         where: {
             AND: andConditions,
-            status:"APPROVED"
+            status: "APPROVED"
         },
         include: {
             provider: true,
@@ -75,17 +82,8 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
                     rating: { gt: 0 },
                     status: "APPROVED"
                 },
-                select: {
-                    customer: {
-                        select: {
-                            id: true,
-                            name: true,
-                            image: true,
-                            email: true
-                        }
-                    },
-                    comment: true,
-                    rating: true
+                include:{
+                    customer:true
                 }
             },
         },
@@ -115,11 +113,75 @@ const getAllmeals = async (data: { meals_name?: string, description?: string, pr
 }
 
 
+
+const getAllMealsForAdmin = async (data: { status: string, dietaryPreference?: string, cuisine?: string, category_name?: string }, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
+    const andConditions: MealWhereInput[] | MealWhereInput = []
+    if (data) {
+        const orConditions: any[] = [];
+        if (data.cuisine) {
+            orConditions.push({
+                cuisine: {
+                    equals: data.cuisine
+                }
+            });
+        }
+        if (data.category_name) {
+            orConditions.push({
+                category_name: {
+                    contains: data.category_name,
+                    mode: "insensitive"
+                }
+            });
+        }
+        if (orConditions.length > 0) {
+            andConditions.push({ OR: orConditions });
+        }
+    }
+
+    if (data.dietaryPreference?.length) {
+        const dietaryList = data.dietaryPreference.split(',') as DietaryPreference[];
+        andConditions.push({
+            OR: dietaryList.map(item => ({ dietaryPreference: item }))
+        });
+    }
+
+
+    const allpost = await prisma.meal.findMany({
+        take: limit,
+        skip,
+        where: {
+            AND: andConditions,
+            status: {
+                in: ["PENDING", "APPROVED", "REJECTED"]
+            }
+        },
+        include: {
+            provider: true,
+            category: true
+        },
+        orderBy: {
+            [sortBy!]: sortOrder
+        },
+
+
+    })
+
+    const total = await prisma.meal.count({ where: { AND: andConditions } })
+
+    return {
+        success: true,
+        message: "Admin meals fetched successfully",
+        data: allpost,
+        total,
+        totalpage: Math.ceil(total / limit!) || 1
+    }
+}
+
 const getSinglemeals = async (id: string) => {
     const result = await prisma.meal.findUniqueOrThrow({
         where: {
             id,
-            status:"APPROVED"
+            status: "APPROVED"
         },
         include: {
             category: true,
@@ -132,12 +194,14 @@ const getSinglemeals = async (id: string) => {
                 where: {
                     parentId: null
                 },
+                
                 include: {
                     replies: {
                         include: {
                             replies: true
                         }
-                    }
+                    },
+                    customer:true
                 }
             }
         }
@@ -215,12 +279,13 @@ const createMeal = async (data: unknown, userid: string) => {
 
     return {
         success: true,
-        message: result ? `your meals has been created` : `your meals didn't created`,
+        message: `your meals has been created`,
         data: result,
     }
 }
 
 const UpdateMeals = async (data: unknown, mealid: string) => {
+    console.log(data,'jjdj')
     const { category_name } = data as any
     const mealsData = z.object({
         meals_name: z.string().optional(),
@@ -229,8 +294,27 @@ const UpdateMeals = async (data: unknown, mealid: string) => {
         price: z.number().optional(),
         isAvailable: z.boolean().optional(),
         category_name: z.string().optional(),
+        cuisine: z.enum(["BANGLEDESHI","ITALIAN","CHINESE","INDIAN","MEXICAN","THAI","JAPANESE",
+"FRENCH",
+            "MEDITERRANEAN",
+            "AMERICAN",
+            "MIDDLE_EASTERN"
+        ]).optional(),
+        dietaryPreference: z.enum([
+            "HALAL",
+            "VEGAN",
+            "VEGETARIAN",
+            "ANY",
+            "GLUTEN_FREE",
+            "KETO",
+            "PALEO",
+            "DAIRY_FREE",
+            "NUT_FREE",
+            "LOW_SUGAR"
+        ]).optional()
     })
     const parseData = mealsData.safeParse(data)
+    console.log(parseData,'[d')
     if (!parseData.success) {
         return {
             success: false,
@@ -258,7 +342,7 @@ const UpdateMeals = async (data: unknown, mealid: string) => {
 
     return {
         success: true,
-        message:  `your meals has been updated`,
+        message: `your meals has been updated`,
         data: result,
     }
 
@@ -282,7 +366,7 @@ const DeleteMeals = async (mealid: string) => {
 
     return {
         success: true,
-        message:  `your meals has been deleted sucessfully` ,
+        message: `your meals has been deleted sucessfully`,
         data: result,
     }
 
@@ -322,15 +406,15 @@ const getOwnMeals = async (userid: string) => {
 
 
 
-const updateStatus = async (data:Partial<Meal>,mealid:string) => {
-    const {status}=data
+const updateStatus = async (data: Partial<Meal>, mealid: string) => {
+    const { status } = data
 
     const existmeal = await prisma.meal.findUnique({
         where: {
             id: mealid
         }
     })
-    if(existmeal?.status===status){
+    if (existmeal?.status === status) {
         throw new Error("meal status already up to date")
     }
     if (existmeal?.id !== mealid) {
@@ -338,18 +422,20 @@ const updateStatus = async (data:Partial<Meal>,mealid:string) => {
     }
     const result = await prisma.meal.update({
         where: {
-            id:mealid
+            id: mealid
         },
-        data:{
+        data: {
             status
         }
     })
-     return {
+    return {
         success: true,
-        message:  `your meal status update sucessfully` ,
+        message: `your meal status update sucessfully`,
         data: result,
     }
 }
+
+
 
 export const mealService = {
     createMeal,
@@ -358,5 +444,6 @@ export const mealService = {
     getAllmeals,
     getSinglemeals,
     getOwnMeals,
-    updateStatus
+    updateStatus,
+    getAllMealsForAdmin
 }

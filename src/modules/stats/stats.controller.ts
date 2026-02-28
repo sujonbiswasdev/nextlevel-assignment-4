@@ -88,9 +88,9 @@ const getcategoryStats=async(req:Request,res:Response,next:NextFunction)=>{
            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result =await StatsService.getcategoryStats(user.id)
-         if(!result){
-            res.status(400).json({result })
-        }
+        //  if(!result){
+        //     res.status(400).json({result })
+        // }
         res.status(200).json({success:true,message:"retrieve category stats successfully",result})
     } catch (error:any) {
      

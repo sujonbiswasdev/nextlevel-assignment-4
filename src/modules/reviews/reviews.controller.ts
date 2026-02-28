@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import { ReviewsService } from "./reviews.service"
 
 const CreateReviews = async (req: Request, res: Response,next:NextFunction) => {
+    console.log('jlsjfjskdlfjskdljfklsdjf',req)
     try {
           const users = req.user
         if (!users) {
@@ -71,5 +72,16 @@ const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
         next(e)
     }
 }
-
-export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid,moderateReview}
+const getAllreviews=async (req: Request, res: Response,next:NextFunction) => {
+    try {
+        const  {reviewid}  = req.params;
+        const result = await ReviewsService.getAllreviews()
+         if(!result.success){
+            res.status(400).json({result })
+        }
+        res.status(200).json({result})
+    } catch (e:any) {
+        next(e)
+    }
+}
+export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid,moderateReview,getAllreviews}

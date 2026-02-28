@@ -17,7 +17,7 @@ CREATE TYPE "MealsStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE "OrderStatus" AS ENUM ('PLACED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "ReviewStatus" AS ENUM ('APPROVED', 'REJECT');
+CREATE TYPE "ReviewStatus" AS ENUM ('APPROVED', 'REJECTED');
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -102,10 +102,10 @@ CREATE TABLE "meal" (
     "image" TEXT,
     "price" INTEGER NOT NULL,
     "isAvailable" BOOLEAN NOT NULL DEFAULT true,
-    "dietaryPreference" "DietaryPreference" NOT NULL,
+    "dietaryPreference" "DietaryPreference" NOT NULL DEFAULT 'HALAL',
     "providerId" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
-    "cuisineId" TEXT NOT NULL,
+    "cuisine" "Cuisine" NOT NULL DEFAULT 'BANGLEDESHI',
     "status" "MealsStatus" NOT NULL DEFAULT 'APPROVED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

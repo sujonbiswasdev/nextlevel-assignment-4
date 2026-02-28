@@ -6,7 +6,7 @@ import { StatsController } from "./stats.controller";
 const router=Router()
 // users
 router.get("/admin/users/stats",auth([UserRoles.Admin]),StatsController.getuserStats)
-// provider all
+// meals
 router.get("/admin/meals/stats",auth([UserRoles.Admin]),StatsController.getmealsStats)
 // orders
 router.get("/admin/orders/stats",auth([UserRoles.Admin]),StatsController.getordersStats)
@@ -16,7 +16,7 @@ router.get("/admin/revenue/stats",auth([UserRoles.Admin]),StatsController.getrev
 // review
 router.get("/admin/reviews/stats",auth([UserRoles.Admin]),StatsController.getreviewStats)
 // category
-router.get("/category/stats",auth([UserRoles.Admin]),StatsController.getcategoryStats)
+router.get("/admin/category/stats",auth([UserRoles.Admin]),StatsController.getcategoryStats)
 
 //own revenue
 router.get("/provider/revenue/stats",auth([UserRoles.Provider]),StatsController.getrevenueProviderStats)
