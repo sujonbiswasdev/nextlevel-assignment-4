@@ -1,52 +1,60 @@
 import { NextFunction, Request, Response } from "express"
 import { mealService } from "./meal.service"
 import paginationSortingHelper from "../../helpers/paginationHelping"
+import { catchAsync } from "../../shared/catchAsync"
+import { sendResponse } from "../../shared/sendResponse"
+import status from "http-status"
+import { IMealQueryRequest } from "./meal.interface"
 
-const createMeal = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+const createMeal = catchAsync(async (req: Request, res: Response) => {
         const user = req.user
         if (!user) {
             return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
-        const result = await mealService.createMeal(req.body, user.id)
-        if (!result.success) {
-            return res.status(400).json({ result })
-        }
-        return res.status(201).json(result )
-    } catch (e: any) {
-        next(e.message)
-    }
-}
+        const result = await mealService.createMeal(req.body, user.id as string)
+        sendResponse(res,{
+            httpStatusCode: status.CREATED,
+            success:true,
+            message:"your meal has been created",
+            data:result
+        })
 
-const UpdateMeals = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const id = req.params.id
-        const result = await mealService.UpdateMeals(req.body, id as string)
-        if (!result.success) {
-            return res.status(400).json({ result })
-        }
-        return res.status(200).json({ result })
-    } catch (e: any) {
-        next(e)
-    }
-}
+})
 
-const DeleteMeals = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const id = req.params.id
-        const result = await mealService.DeleteMeals(id as string)
-        if (!result.success) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json({ result })
-    } catch (e: any) {
-        next(e)
+const UpdateMeals = catchAsync(async(req:Request,res:Response)=>{
+    const user=req.user
+    if(!user){
+        return res.status(status.UNAUTHORIZED).json({success:false,message:"you are not authorized"})
     }
-}
+    const result = await mealService.UpdateMeals(req.body,req.params.id as string)
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"meal update successfully",
+        data:result
+    })
+})
 
-const Getallmeals = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const isAvailable = req.query.isAvailable
+const DeleteMeals = catchAsync(async(req:Request,res:Response)=>{
+    const user=req.user
+    if(!user){
+        return res.status(status.UNAUTHORIZED).json({
+            success:false,
+            message:"you are unauthorized"
+        })
+    }
+    const result = await mealService.DeleteMeals(user.id)
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"your meal delete has been successfully",
+        data:result
+    })
+})
+
+const Getallmeals = catchAsync(async(req:Request,res:Response)=>{
+
+ const isAvailable = req.query.isAvailable
             ? req.query.isAvailable === 'true'
                 ? true
                 : req.query.isAvailable == 'false'
@@ -57,82 +65,74 @@ const Getallmeals = async (req: Request, res: Response, next: NextFunction) => {
         const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
 
         const result = await mealService.getAllmeals(req.query as any, isAvailable as boolean, page, limit, skip, sortBy, sortOrder)
-        if (!result.success) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json({ result })
-    } catch (e: any) {
-        next(e)
-
-    }
-}
+        sendResponse(res,{
+            httpStatusCode:status.OK,
+            success:true,
+            message:" retrieve all meals successfully",
+            data:result
+        })
 
 
-const getAllMealsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+})
+
+
+// const getAllMealsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
         
-        const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
+//         const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
 
-        const result = await mealService.getAllMealsForAdmin(req.query as any, page, limit, skip, sortBy, sortOrder)
-        if (!result.success) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json( result )
-    } catch (e: any) {
-        next(e)
+//         const result = await mealService.getAllMealsForAdmin(req.query as any, page, limit, skip, sortBy, sortOrder)
+//         if (!result.success) {
+//             res.status(400).json({ result })
+//         }
+//         res.status(200).json( result )
+//     } catch (e: any) {
+//         next(e)
 
+//     }
+// }
+
+
+const GetSignlemeals = catchAsync(async(req:Request,res:Response)=>{
+    const {id}=req.params
+    const result =await mealService.getSinglemeals(id as string)
+     sendResponse(res,{
+            httpStatusCode:status.OK,
+            success:true,
+            message:" retrieve single meal successfully",
+            data:result
+        })
+
+})
+
+const getownmeals = catchAsync(async (req:Request,res:Response)=>{
+    const user=req.user
+    if(!user){
+        return res.status(status.UNAUTHORIZED).json({success:false,message:"you are unauthorized"})
     }
-}
+    const result =await mealService.getOwnMeals(user.id)
+        sendResponse(res,{
+            httpStatusCode:status.OK,
+            success:true,
+            message:"your own meal retrieve has been successfully",
+            data:result
+        })
+})
 
-
-const GetSignlemeals = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-
-        const result = await mealService.getSinglemeals(req.params.id as string)
-        if (!result.success) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json({ result })
-    } catch (e: any) {
-        next(e)
+const updateStatus = catchAsync(async(req:Request,res:Response)=>{
+    const user=req.user
+    if(!user){
+        return res.status(status.UNAUTHORIZED).json({success:false,message:"you are unauthorized"})
     }
-}
-
-const getownmeals = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await mealService.getOwnMeals(user.id)
-        if (!result.success) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json({ result })
-    } catch (e: any) {
-        next(e)
-    }
-}
-
-
-const updateStatus = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const params = req.params.id
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await mealService.updateStatus(req.body, params as string)
-        if (!result) {
-            res.status(400).json({ result })
-        }
-        res.status(200).json({ result })
-    } catch (e: any) {
-        e.customMessage = e.message
-        next(e)
-    }
-}
-
+    const {id}=req.params
+    const result = await mealService.updateStatus(req.body,id as string)
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"meal status update successfully",
+        data:result
+    })
+})
 export const mealController = {
     createMeal,
     UpdateMeals,
@@ -140,6 +140,5 @@ export const mealController = {
     Getallmeals,
     GetSignlemeals,
     getownmeals,
-    updateStatus,
-    getAllMealsForAdmin
+    updateStatus
 }

@@ -10,7 +10,7 @@ const getuserStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -70,7 +70,7 @@ const getmealsStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         const [totalmeals, totalavailabemeals, totalunavailabemeals,totalapprovedmeals,totalpendingmeals,totalrejectedmeals] =
             await Promise.all([
                 await tx.meal.count(),
@@ -102,7 +102,7 @@ const getordersStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -158,7 +158,7 @@ const getrevenueStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -204,7 +204,7 @@ const getreviewStats = async (adminid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -248,7 +248,7 @@ const getcategoryStats = async (adminid: string) => {
     if (existuser.id !== adminid) {
         throw new Error("you are unauthorize")
     }
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         const [totalcategory,totalcategory_name, mealsPerCategory] =
             await Promise.all([
                 await tx.category.count(),
@@ -286,7 +286,7 @@ const getrevenueProviderStats = async (userid: string) => {
     if (existuser.id !== userid) {
         throw new Error("you are unauthorize")
     }
-     return await prisma.$transaction(async (tx) => {
+     return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -340,7 +340,7 @@ const getProvidermealsStats = async (userid: string) => {
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         const [totalmeals, totalavailabemeals, totalunavailabemeals] =
             await Promise.all([
                 await tx.meal.count({where:{providerId:existuser.provider!.id}}),
@@ -391,7 +391,7 @@ console.log("TODAY LENGTH:", todayOrdersData.length)
         throw new Error("you are unauthorize")
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:any) => {
         // today
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);

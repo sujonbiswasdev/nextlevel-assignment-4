@@ -2,15 +2,17 @@ import { Router } from "express";
 import auth from "../../middleware/auth";
 import { UserRoles } from "../../middleware/auth.const";
 import { mealController } from "./meal.controller";
+import { validateRequest } from "../../middleware/validateRequest";
+import { CreatemealData, UpdatemealData } from "./meal.validation";
 
 const router=Router()
 router.get('/meals',mealController.Getallmeals)
-router.get('/admin/meals',auth([UserRoles.Admin]),mealController.getAllMealsForAdmin)
+// router.get('/admin/meals',auth([UserRoles.Admin]),mealController.getAllMealsForAdmin)
 router.get('/provider/meals/own',auth([UserRoles.Provider]),mealController.getownmeals)
-router.post('/provider/meals',auth([UserRoles.Provider]),mealController.createMeal)
-router.delete('/provider/meals/:id',auth([UserRoles.Provider,UserRoles.Admin]),mealController.DeleteMeals)
-router.put('/provider/meals/:id',auth([UserRoles.Provider]),mealController.UpdateMeals)
-router.get('/meals/:id',mealController.GetSignlemeals)
-router.put('/admin/meals/:id',auth([UserRoles.Admin]),mealController.updateStatus)
+router.post('/provider/meal',auth([UserRoles.Provider]),validateRequest(CreatemealData),mealController.createMeal)
+router.delete('/provider/meal/:id',auth([UserRoles.Provider,UserRoles.Admin]),mealController.DeleteMeals)
+router.put('/provider/meal/:id',auth([UserRoles.Provider]),validateRequest(UpdatemealData),mealController.UpdateMeals)
+router.get('/meal/:id',mealController.GetSignlemeals)
+router.put('/admin/meal/:id',auth([UserRoles.Admin]),mealController.updateStatus)
 
 export const mealRouter={router}

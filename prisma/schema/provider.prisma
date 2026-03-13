@@ -9,6 +9,7 @@ model ProviderProfile {
   createdAt      DateTime @default(now())
   updatedAt  DateTime   @updatedAt
   // relationship
+  reviews  Review[]
   user   User @relation(fields: [userId], references: [id],onDelete: Cascade)
   meals Meal[]
   orders Order[]

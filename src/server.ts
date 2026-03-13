@@ -5,7 +5,7 @@ const port = process.env.PORT || 4000
 const main=async()=>{
     try {
         await prisma.$connect()
-        console.log("connected to databaes sucessfully")
+        console.log("connected to databaes successfully")
         app.listen(port, () => {
             console.log(`Example app listening on port http://localhost:${port}`)
         })

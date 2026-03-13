@@ -1,78 +1,65 @@
 import { NextFunction, Request, Response } from "express"
 import { providerService } from "./provider.service"
+import { sendResponse } from "../../shared/sendResponse"
+import status from "http-status"
+import { catchAsync } from "../../shared/catchAsync"
 
-const createProvider = async (req: Request, res: Response,next:NextFunction) => {
-    try {
-         const user = req.user
+const createProvider = catchAsync(async (req: Request, res: Response) => {
+            const user = req.user
         if (!user) {
            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result =await providerService.createProvider(req.body,user.id)
-         if(!result.success){
-           return res.status(400).json({result })
-        }
-       return res.status(201).json(result)
-    } catch (e:any) {
-        next(e)
-    }
+            sendResponse(res,{
+                httpStatusCode:status.CREATED,
+                success:true,
+                message:"your provider profile has been created",
+                data:result
+            })
 }
+)
 
-const gelAllprovider=async(req:Request,res:Response,next:NextFunction)=>{
-    try {
-        const result =await providerService.getAllProvider()
-         if(!result.success){
-            return res.status(400).json(result )
-        }
-        return res.status(200).json(result)
-
-    } catch (e:any) {
-        next(e)
-    }
+const gelAllprovider=catchAsync(async(req:Request,res:Response)=>{
+    const result =await providerService.getAllProvider()
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"retrieve all provider successfully",
+        data:result
+    })
 }
-const getProviderWithMeals=async(req:Request,res:Response,next:NextFunction)=>{
-    try {
-        const result =await providerService.getProviderWithMeals(req.params.id as string)
-         if(!result.success){
-            return res.status(400).json(result )
-        }
-        return res.status(200).json(result)
-    } catch (e:any) {
-        next(e)
-    }
+)
+const getProviderWithMeals=catchAsync(async(req:Request,res:Response)=>{
+     const result =await providerService.getProviderWithMeals(req.params.id as string)
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"retrieve provider with meals successfully",
+        data:result
+    })
 }
+)
 
-const UpateProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
-    try {
-        const user = req.user
+const UpateProviderProfile=catchAsync(async(req:Request,res:Response)=>{
+    const user = req.user
         if (!user) {
            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
         const result =await providerService.UpateProviderProfile(req.body,user.id)
-         if(!result.success){
-           return res.status(400).json(result )
-        }
-        return res.status(200).json(result)
-    } catch (e:any) {
-        next(e)
+    if(!result){
+        sendResponse(res,{
+            httpStatusCode:status.BAD_REQUEST,
+            success:false,
+            message:"update provider profile failed",
+            data:result
+        })
     }
-}
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"update provider profile successfully",
+        data:result
+    })
+})
 
-
-const getOwnProviderProfile=async(req:Request,res:Response,next:NextFunction)=>{
-    try {
-        const user = req.user
-        if (!user) {
-           return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result =await providerService.getOwnProviderProfile(user.id)
-         if(!result.success){
-            return res.status(400).json(result )
-        }
-        return res.status(200).json(result)
-    } catch (e:any) {
-        next(e)
-    }
-}
-
-
-export const providerController={createProvider,gelAllprovider,getProviderWithMeals,UpateProviderProfile,getOwnProviderProfile}
+export const providerController={createProvider,gelAllprovider,getProviderWithMeals,UpateProviderProfile}

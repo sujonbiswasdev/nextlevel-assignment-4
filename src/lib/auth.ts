@@ -37,10 +37,6 @@ export const auth = betterAuth({
             }
         }
     },
-    advanced: {
-        cookiePrefix: "assignment-4",
-         useSecureCookies: true
-    },
     emailAndPassword: {
         enabled: true,
         autoSignIn:true

@@ -1,24 +1,20 @@
-import z from "zod";
+import z, { object } from "zod";
 import { ReviewStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 import { formatZodIssues } from "../../utils/handleZodError";
+import { createReviewsData, updateReviewsData } from "./reviews.validation";
+import { ICreatereviewData, IUpdatereviewData } from "./reviews.interface";
+import AppError from "../../errorHelper/AppError";
 
-const CreateReviews = async (customerid: string, mealid: string, data: { rating: number, comment: string, parentId?: string }) => {
-
-    const orderData = z.object({
-        rating: z.number().min(1).max(5),
-        comment: z.string(),
-        parentId: z.string().optional()
-    });
-    const parseData = orderData.safeParse(data)
-    if (!parseData.success) {
-        return {
-            success: false,
-            message: `your provided data is invalid`,
-            data: formatZodIssues(parseData.error)
-        }
+const CreateReviews = async (customerid: string, mealid: string, data: ICreatereviewData) => {
+    const existingmeal = await prisma.meal.findUnique({
+        where: {
+            id: mealid
+            }
+    })
+    if(!existingmeal){
+        throw new AppError(404, "meal not found for this id")
     }
-
     const orderMeal = await prisma.orderitem.findFirst({
         where: {
             mealId: mealid,
@@ -29,50 +25,26 @@ const CreateReviews = async (customerid: string, mealid: string, data: { rating:
     });
 
     if (!orderMeal) {
-        return {
-            success: false,
-            message: 'You must place an order before leaving a review.'
-        }
-
+        throw new AppError(404, "you can not review for this meal without order")
     }
     if (data.rating >= 6) {
-        return {
-            success: false,
-            message: `your provided rating is invalid`
-        }
+      throw new AppError(400, "rating must be between 1 and 5")
     }
 
     const result = await prisma.review.create({
         data: {
             customerId: customerid,
             mealId: mealid,
-            ...parseData!.data!
+            ...data
 
         }
     })
 
-    return {
-        success: true,
-        message: `your review has been created successfully`,
-        result
-    }
+    return result
 
 }
-
-const updateReview = async (reviewId: string, data: { comment?: string, rating?: number }, authorId: string) => {
-
-    const orderData = z.object({
-        rating: z.number().min(1).max(5).optional(),
-        comment: z.string().optional()
-    });
-    const parseData = orderData.safeParse(data)
-    if (!parseData.success) {
-        return {
-            success: false,
-            message: `your provided data is invalid`,
-            data: formatZodIssues(parseData.error)
-        }
-    }
+const updateReview = async (reviewId: string, data: IUpdatereviewData, authorId: string) => {
+  
     const review = await prisma.review.findFirst({
         where: {
             id: reviewId,
@@ -82,11 +54,9 @@ const updateReview = async (reviewId: string, data: { comment?: string, rating?:
             id: true
         }
     })
-    console.log(
-        review
-    )
+    
     if (!review) {
-        throw new Error("Your provided input is invalid!")
+        throw new AppError(404,"review not found")
     }
 
     const result = await prisma.review.update({
@@ -95,12 +65,12 @@ const updateReview = async (reviewId: string, data: { comment?: string, rating?:
             customerId: authorId
         },
         data: {
-            ...parseData.data
+            ...data
         }
     })
     return {
         success: true,
-        message: result ? `your review update successfully` : `your review didn't updated`,
+        message:`your review update successfully`,
         result
     }
 }
@@ -117,7 +87,7 @@ const deleteReview = async (reviewid: string, authorid: string) => {
         }
     })
     if (!review) {
-        throw new Error('review not found')
+        throw new AppError(404, "review not found for this id")
     }
 
     const result = await prisma.review.delete({
@@ -126,15 +96,11 @@ const deleteReview = async (reviewid: string, authorid: string) => {
         }
     })
 
-    return {
-        success: true,
-        message: `your review delete successfully`,
-        result
-    }
+    return result
 }
 
 const getReviewByid = async (reviewid: string) => {
-    const result = await prisma.review.findUniqueOrThrow({
+    const result = await prisma.review.findUnique({
         where: {
             id: reviewid
         },
@@ -142,28 +108,16 @@ const getReviewByid = async (reviewid: string) => {
             meal: true
         }
     })
-
-    return {
-        success: true,
-        message: `Review retrieved successfully. `,
-        result
+    if(!result){
+        throw new AppError(404,'review not found')
     }
+
+    return result
 }
 
 const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
+    const {status}=data
 
-
-    const orderData = z.object({
-        status: z.enum(['APPROVED', 'REJECTED']),
-    });
-    const parseData = orderData.safeParse(data)
-    if (!parseData.success) {
-        return {
-            success: false,
-            message: `your provided data is invalid`,
-            data: formatZodIssues(parseData.error)
-        }
-    }
     const reviewData = await prisma.review.findUnique({
         where: {
             id
@@ -174,27 +128,23 @@ const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
         }
     });
     if (!reviewData) {
-        throw new Error('review data not found')
+        throw new AppError(404,'review data not found by id')
     }
 
     if (reviewData.status === data.status) {
-        throw new Error(`Your provided status (${data.status}) is already up to date.`)
+        throw new AppError(409, `Your provided status (${data.status}) is already up to date.`)
     }
 
     const result = await prisma.review.update({
         where: {
             id
         },
-        data: {
-            status: parseData.data.status
+        data:{
+            status
         }
     })
 
-    return {
-        success: true,
-        message: result ? `Review status update successfully. ` : `Review status update unsuccessfully.`,
-        result
-    }
+    return result
 }
 
 const getAllreviews = async () => {
@@ -206,11 +156,7 @@ const getAllreviews = async () => {
         }
     })
 
-    return {
-        success: true,
-        message: `Review retrieved successfully. `,
-        result
-    }
+    return result
 }
 
 

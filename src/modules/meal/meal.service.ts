@@ -1,449 +1,359 @@
-import { prisma } from "../../lib/prisma"
-import z from "zod";
-import { formatZodIssues } from "../../utils/handleZodError";
+import { prisma } from "../../lib/prisma";
 import { MealWhereInput } from "../../../generated/prisma/models";
 import { DietaryPreference } from "../../../generated/prisma/enums";
 import { Meal } from "../../../generated/prisma/client";
+import {
+  ICreateMealsData,
+  IMealQueryRequest,
+  IUpdateMealsData,
+  MealQuery,
+} from "./meal.interface";
+import AppError from "../../errorHelper/AppError";
+import status from "http-status";
 
+const createMeal = async (data: ICreateMealsData, userid: string) => {
+  const providerid = await prisma.user.findUnique({
+    where: { id: userid },
+    include: { provider: { select: { id: true } } },
+  });
+  if (!providerid) {
+    throw new AppError(status.NOT_FOUND, "provider not found");
+  }
 
-const getAllmeals = async (data: { meals_name?: string, description?: string, price?: Number, dietaryPreference?: string, cuisine?: string, category_name?: string }, isAvailable?: boolean, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
-    const andConditions: MealWhereInput[] | MealWhereInput = []
-    if (data) {
-        const orConditions: any[] = [];
-        if (data.meals_name) {
-            orConditions.push({
-                meals_name: {
-                    contains: data.meals_name,
-                    mode: "insensitive"
-                }
-            });
-        }
-        if (data.description) {
-            orConditions.push({
-                description: {
-                    contains: data.description,
-                    mode: "insensitive"
-                }
-            });
-        }
-        if (data.cuisine) {
-            orConditions.push({
-                cuisine: {
-                    equals: data.cuisine
-                }
-            });
-        }
-        if (data.category_name) {
-            orConditions.push({
-                category_name: {
-                    contains: data.category_name,
-                    mode: "insensitive"
-                }
-            });
-        }
-        if (orConditions.length > 0) {
-            andConditions.push({ OR: orConditions });
-        }
+  const categoryCheck = await prisma.category.findUnique({
+    where: {
+      name: data.category_name,
+    },
+  });
+  if (!categoryCheck) {
+    throw new AppError(status.NOT_FOUND, "category not found");
+  }
+  const result = await prisma.meal.create({
+    data: {
+      ...data,
+      providerId: providerid!.provider!.id,
+    },
+  });
+
+  return result;
+};
+
+const getAllmeals = async (
+  data: MealQuery,
+  isAvailable?: boolean,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  sortBy?: string | undefined,
+  sortOrder?: string | undefined,
+) => {
+  console.log(data, "data for busines");
+  const andConditions: MealWhereInput[] | MealWhereInput = [];
+  if (data) {
+    const orConditions: any[] = [];
+    if (data.meals_name) {
+      orConditions.push({
+        meals_name: {
+          contains: data.meals_name,
+          mode: "insensitive",
+        },
+      });
     }
-    if (typeof isAvailable === 'boolean') {
-        andConditions.push({ isAvailable: isAvailable })
+    if (data.description) {
+      orConditions.push({
+        description: {
+          contains: data.description,
+          mode: "insensitive",
+        },
+      });
     }
-
-
-    if (data.price) {
-        andConditions.push({
-            price: {
-                gte: 1,
-                lte: Number(data.price),
-            },
-        });
+    if (data.cuisine) {
+      orConditions.push({
+        cuisine: {
+          equals: data.cuisine,
+        },
+      });
     }
-    if (data.dietaryPreference?.length) {
-        const dietaryList = data.dietaryPreference.split(',') as DietaryPreference[];
-        andConditions.push({
-            OR: dietaryList.map(item => ({ dietaryPreference: item }))
-        });
+    if (data.category_name) {
+      orConditions.push({
+        category_name: {
+          contains: data.category_name,
+          mode: "insensitive",
+        },
+      });
     }
+    if (orConditions.length > 0) {
+      andConditions.push({ OR: orConditions });
+    }
+  }
+  if (typeof isAvailable === "boolean") {
+    andConditions.push({ isAvailable: isAvailable });
+  }
 
-
-
-    const allpost = await prisma.meal.findMany({
-        take: limit,
-        skip,
+  if (data.price) {
+    andConditions.push({
+      price: {
+        gte: 1,
+        lte: Number(data.price),
+      },
+    });
+  }
+  if (data.dietaryPreference?.length) {
+    const dietaryList = data.dietaryPreference.split(
+      ",",
+    ) as DietaryPreference[];
+    andConditions.push({
+      OR: dietaryList.map((item) => ({ dietaryPreference: item })),
+    });
+  }
+  const meals = await prisma.meal.findMany({
+    take: limit,
+    skip,
+    where: {
+      AND: andConditions,
+      status: "APPROVED",
+    },
+    include: {
+      provider: true,
+      reviews: {
         where: {
-            AND: andConditions,
-            status: "APPROVED"
+          parentId: null,
+          rating: { gt: 0 },
+          status: "APPROVED",
         },
         include: {
-            provider: true,
-            reviews: {
-                where: {
-                    parentId: null,
-                    rating: { gt: 0 },
-                    status: "APPROVED"
-                },
-                include:{
-                    customer:true
-                }
-            },
+          customer: true,
         },
-        orderBy: {
-            [sortBy!]: sortOrder
-        },
+      },
+    },
+    orderBy: {
+      [sortBy!]: sortOrder,
+    },
+  });
 
+  const mealIds = meals.map((meal) => meal.id);
 
-    })
-
-    const total = await prisma.meal.count({ where: { AND: andConditions } })
-
+  const reviewStats = await prisma.review.groupBy({
+    by: ["mealId"],
+    where: {
+      mealId: { in: mealIds },
+      parentId: null,
+      rating: { gt: 0 },
+      status: "APPROVED",
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    },
+  });
+  const mealsWithStats = meals.map((meal) => {
+    const stats = reviewStats.find((s) => s.mealId === meal.id);
     return {
-        success: true,
-        message: `retrieve all meals has been successfully`,
-        data: allpost,
-        pagination: {
-            total,
-            page,
-            limit,
-            totalpage: Math.ceil(total / limit!) || 1
-        },
+      ...meal,
+      averageRating: stats?._avg?.rating || 0, // Default to 0
+      totalReview: stats?._count?.rating || 0, // Default to 0
+    };
+  });
+  const total = await prisma.meal.count({ where: { AND: andConditions } });
 
-    }
-
-
-}
-
-
-
-const getAllMealsForAdmin = async (data: { status: string, dietaryPreference?: string, cuisine?: string, category_name?: string }, page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
-    const andConditions: MealWhereInput[] | MealWhereInput = []
-    if (data) {
-        const orConditions: any[] = [];
-        if (data.cuisine) {
-            orConditions.push({
-                cuisine: {
-                    equals: data.cuisine
-                }
-            });
-        }
-        if (data.category_name) {
-            orConditions.push({
-                category_name: {
-                    contains: data.category_name,
-                    mode: "insensitive"
-                }
-            });
-        }
-        if (orConditions.length > 0) {
-            andConditions.push({ OR: orConditions });
-        }
-    }
-
-    if (data.dietaryPreference?.length) {
-        const dietaryList = data.dietaryPreference.split(',') as DietaryPreference[];
-        andConditions.push({
-            OR: dietaryList.map(item => ({ dietaryPreference: item }))
-        });
-    }
-
-
-    const allpost = await prisma.meal.findMany({
-        take: limit,
-        skip,
-        where: {
-            AND: andConditions,
-            status: {
-                in: ["PENDING", "APPROVED", "REJECTED"]
-            }
-        },
-        include: {
-            provider: true,
-            category: true
-        },
-        orderBy: {
-            [sortBy!]: sortOrder
-        },
-
-
-    })
-
-    const total = await prisma.meal.count({ where: { AND: andConditions } })
-
-    return {
-        success: true,
-        message: "Admin meals fetched successfully",
-        data: allpost,
-        total,
-        totalpage: Math.ceil(total / limit!) || 1
-    }
-}
+  return {
+    data: mealsWithStats,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalpage: Math.ceil(total / limit!) || 1,
+    },
+  };
+};
 
 const getSinglemeals = async (id: string) => {
-    const result = await prisma.meal.findUniqueOrThrow({
-        where: {
-            id,
-            status: "APPROVED"
-        },
+  const result = await prisma.meal.findUniqueOrThrow({
+    where: {
+      id,
+      status: "APPROVED",
+    },
+    include: {
+      category: true,
+      provider: {
         include: {
-            category: true,
-            provider: {
-                include: {
-                    user: true
-                }
-            },
-            reviews: {
-                where: {
-                    parentId: null
-                },
-                
-                include: {
-                    replies: {
-                        include: {
-                            replies: true
-                        }
-                    },
-                    customer:true
-                }
-            }
-        }
-    })
-
-
-    return {
-        success: true,
-        message: result ? `retrieve single meals has been successfully` : `retrieve single meals failed`,
-        data: result,
-    }
-}
-
-const createMeal = async (data: unknown, userid: string) => {
-    const providerid = await prisma.user.findUnique({ where: { id: userid }, include: { provider: { select: { id: true } } } })
-    if (!providerid) {
-        throw new Error('provider not found')
-    }
-    const mealsData = z.object({
-        meals_name: z.string(),
-        description: z.string().optional(),
-        image: z.string(),
-        price: z.number(),
-        isAvailable: z.boolean().optional(),
-        dietaryPreference: z.enum([
-            "HALAL",
-            "VEGAN",
-            "VEGETARIAN",
-            "ANY",
-            "GLUTEN_FREE",
-            "KETO",
-            "PALEO",
-            "DAIRY_FREE",
-            "NUT_FREE",
-            "LOW_SUGAR"
-        ]).default('VEGETARIAN'),
-        category_name: z.string(),
-        cuisine: z.enum(["BANGLEDESHI",
-            "ITALIAN",
-            "CHINESE",
-            "INDIAN",
-            "MEXICAN",
-            "THAI",
-            "JAPANESE",
-            "FRENCH",
-            "MEDITERRANEAN",
-            "AMERICAN",
-            "MIDDLE_EASTERN"]).default('BANGLEDESHI')
-    }).strict()
-    const parseData = mealsData.safeParse(data)
-    if (!parseData.success) {
-        return {
-            success: false,
-            message: `your provided data is invalid`,
-            data: formatZodIssues(parseData.error)
-        }
-    }
-    const categoryCheck = await prisma.category.findFirst(
-        {
-            where: {
-                name: parseData.data.category_name
-            }
-        }
-    )
-    if (!categoryCheck) {
-        throw new Error("category not found")
-    }
-    const validData = parseData.data
-    const result = await prisma.meal.create({
-        data: {
-            ...validData,
-            providerId: providerid!.provider!.id
-        }
-    })
-
-    return {
-        success: true,
-        message: `your meals has been created`,
-        data: result,
-    }
-}
-
-const UpdateMeals = async (data: unknown, mealid: string) => {
-    console.log(data,'jjdj')
-    const { category_name } = data as any
-    const mealsData = z.object({
-        meals_name: z.string().optional(),
-        description: z.string().optional(),
-        image: z.string().optional(),
-        price: z.number().optional(),
-        isAvailable: z.boolean().optional(),
-        category_name: z.string().optional(),
-        cuisine: z.enum(["BANGLEDESHI","ITALIAN","CHINESE","INDIAN","MEXICAN","THAI","JAPANESE",
-"FRENCH",
-            "MEDITERRANEAN",
-            "AMERICAN",
-            "MIDDLE_EASTERN"
-        ]).optional(),
-        dietaryPreference: z.enum([
-            "HALAL",
-            "VEGAN",
-            "VEGETARIAN",
-            "ANY",
-            "GLUTEN_FREE",
-            "KETO",
-            "PALEO",
-            "DAIRY_FREE",
-            "NUT_FREE",
-            "LOW_SUGAR"
-        ]).optional()
-    })
-    const parseData = mealsData.safeParse(data)
-    console.log(parseData,'[d')
-    if (!parseData.success) {
-        return {
-            success: false,
-            message: `your provided data is invalid`,
-            data: formatZodIssues(parseData.error)
-        }
-    }
-
-    if (!mealid) {
-        throw new Error("meals not found")
-    }
-    const existmeal = await prisma.meal.findUniqueOrThrow({ where: { id: mealid } })
-    if (existmeal.category_name === category_name) {
-        throw new Error("category_name is already up to date.")
-    }
-    const result = await prisma.meal.update({
-        where: {
-            id: mealid
+          user: true,
         },
-        data: {
-            ...parseData.data,
-        }
+      },
+      reviews: {
+        where: {
+          parentId: null,
+        },
 
-    })
+        include: {
+          replies: {
+            include: {
+              replies: true,
+            },
+          },
+          customer: {
+            include: {
+              reviews: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
-    return {
-        success: true,
-        message: `your meals has been updated`,
-        data: result,
-    }
+  const providerRating = await prisma.review.aggregate({
+    where: {
+      customer: {
+        provider: {
+          id: result.provider.id,
+        },
+      },
+      rating: {
+        gt: 0,
+      },
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    },
+  });
+  return {
+    ...result,
+    providerRating: {
+      totalReview: providerRating._count.rating,
+      averageRating: providerRating._avg.rating ?? 0,
+    },
+  };
+};
 
-}
+const UpdateMeals = async (data: IUpdateMealsData, mealid: string) => {
+  const { category_name } = data as any;
+    const existmeal = await prisma.meal.findUnique({
+    where: { id: mealid },
+  });
+  if (!existmeal) {
+    throw new AppError(status.NOT_FOUND,"meals not found");
+  }
+  if (existmeal.category_name === category_name) {
+    throw new AppError(status.CONFLICT,"category_name is already up to date.");
+  }
+  const result = await prisma.meal.update({
+    where: {
+      id: mealid,
+    },
+    data: {
+      ...data,
+    },
+  });
+
+  return result;
+};
 
 const DeleteMeals = async (mealid: string) => {
+  const existmeal = await prisma.meal.findUnique({
+    where: {
+      id: mealid,
+    },
+  });
+  if (!existmeal) {
+    throw new AppError(status.NOT_FOUND, "meal not found");
+  }
+  const result = await prisma.meal.delete({
+    where: {
+      id: mealid,
+    },
+  });
 
-    const existmeal = await prisma.meal.findUniqueOrThrow({
-        where: {
-            id: mealid
-        }
-    })
-    if (existmeal?.id !== mealid) {
-        throw new Error('mealid is invalid,please check your mealid')
-    }
-    const result = await prisma.meal.delete({
-        where: {
-            id: mealid
-        }
-    })
-
-    return {
-        success: true,
-        message: `your meals has been deleted sucessfully`,
-        data: result,
-    }
-
-}
+  return result;
+};
 
 const getOwnMeals = async (userid: string) => {
-    const result = await prisma.meal.findMany({
+  const meals = await prisma.meal.findMany({
+    where: {
+      provider: {
+        userId: userid,
+      },
+    },
+    include: {
+      category: true,
+      provider: true,
+      reviews: {
         where: {
-            provider: {
-                userId: userid
-            }
+          parentId: null,
         },
         include: {
-            category: true,
-            provider: true,
-            reviews: {
-                where: {
-                    parentId: null
-                },
-                include: {
-                    replies: {
-                        include: {
-                            replies: true
-                        }
-                    }
-                }
-            }
-        }
-    })
-
+          replies: {
+            include: {
+              replies: true,
+            },
+          },
+        },
+      },
+    },
+  });
+   const mealIds = meals.map((meal) => meal.id);
+   const reviewStats = await prisma.review.groupBy({
+    by: ["mealId"],
+    where: {
+      mealId: { in: mealIds },
+      parentId: null,
+      rating: { gt: 0 },
+      status: "APPROVED",
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    },
+  });
+  const mealsWithStats = meals.map((meal) => {
+    const stats = reviewStats.find((s) => s.mealId === meal.id);
     return {
-        success: true,
-        message: 'retrieve own meals has been successfully',
-        data: result,
-    }
-}
+      ...meal,
+      averageRating: stats?._avg?.rating || 0, // Default to 0
+      totalReview: stats?._count?.rating || 0, // Default to 0
+    };
+  });
 
-
+  return mealsWithStats;
+};
 
 const updateStatus = async (data: Partial<Meal>, mealid: string) => {
-    const { status } = data
+  const { status } = data;
 
-    const existmeal = await prisma.meal.findUnique({
-        where: {
-            id: mealid
-        }
-    })
-    if (existmeal?.status === status) {
-        throw new Error("meal status already up to date")
-    }
-    if (existmeal?.id !== mealid) {
-        throw new Error('mealid is invalid,please check your mealid')
-    }
-    const result = await prisma.meal.update({
-        where: {
-            id: mealid
-        },
-        data: {
-            status
-        }
-    })
-    return {
-        success: true,
-        message: `your meal status update sucessfully`,
-        data: result,
-    }
-}
-
-
+  const existmeal = await prisma.meal.findUnique({
+    where: {
+      id: mealid,
+    },
+  });
+  if (existmeal?.status === status) {
+    throw new AppError(409,"meal status already up to date");
+  }
+  if (existmeal?.id !== mealid) {
+    throw new AppError(404,"mealid is invalid,please check your mealid");
+  }
+  const result = await prisma.meal.update({
+    where: {
+      id: mealid,
+    },
+    data: {
+      status,
+    },
+  });
+  return result
+};
 
 export const mealService = {
-    createMeal,
-    UpdateMeals,
-    DeleteMeals,
-    getAllmeals,
-    getSinglemeals,
-    getOwnMeals,
-    updateStatus,
-    getAllMealsForAdmin
-}
+  createMeal,
+  UpdateMeals,
+  DeleteMeals,
+  getAllmeals,
+  getSinglemeals,
+  getOwnMeals,
+  updateStatus,
+};

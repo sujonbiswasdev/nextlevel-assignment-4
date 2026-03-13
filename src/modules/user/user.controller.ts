@@ -1,122 +1,137 @@
 import { NextFunction, Request, Response } from "express";
 import { UserService } from "./user.service";
 import paginationSortingHelper from "../../helpers/paginationHelping";
-const GetAllUsers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        
-        const search = req.query
-        const { isActive } = req.query
-        const isactivequery = isActive ? req.params.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined:undefined
-        const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
-        const result = await UserService.GetAllUsers(search, isactivequery as boolean,page,limit,skip,sortBy,sortOrder)
-          if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(200).json({result})
-    } catch (e: any) {
-        next(e)
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
+import status from "http-status";
+const GetAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const search = req.query;
+  const { isActive } = req.query;
+  const isactivequery = isActive
+    ? req.params.isActive === "true"
+      ? true
+      : req.query.isActive === "false"
+        ? false
+        : undefined
+    : undefined;
+  const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(
+    req.query,
+  );
+  const result = await UserService.GetAllUsers({
+    data: search,
+    isactivequery: isactivequery as boolean,
+    page,
+    limit,
+    skip,
+    sortBy,
+    sortOrder: sortOrder as "asc" | "desc" | undefined,
+  });
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "retrieve all users has been successfully",
+    data: result,
+  });
+});
+
+const getUserprofile = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return res
+      .status(status.UNAUTHORIZED)
+      .json({ success: false, message: "you are unauthorized" });
+  }
+  const result = await UserService.getUserprofile(req.params.id as string);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message:
+      user.role !== "Provider"
+        ? "your user profile has been retrieved successfully"
+        : "your user profile has been retrieved successfully",
+    data: result,
+  });
+});
+
+const UpateUserProfile = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return res
+      .status(401)
+      .json({ success: false, message: "you are unauthorized" });
+  }
+  const result = await UserService.UpateUserProfile(
+    req.body,
+    user.id as string,
+  );
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "your profile has been updated successfully",
+    data: result,
+  });
+});
+
+const UpdateUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "you are unauthorized" });
     }
-}
+    const result = await UserService.UpdateUser(
+      req.params.id as string,
+      req.body,
+    );
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: `user change successfully`,
+      data: result,
+    });
+  },
+);
 
-
-
-const getUserprofile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.getUserprofile(req.params.id as string)
-          if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(201).json({ result })
-    } catch (e: any) {
-        next(e)
+const DeleteUserProfile = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "you are unauthorized" });
     }
+    const result = await UserService.DeleteUserProfile(req.params.id as string);
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "user account delete successfully",
+      data: result,
+    });
+  },
+);
 
-}
-
-
-const UpateUserProfile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.UpateUserProfile(req.body,user.id as string)
-          if(!result?.success){
-            res.status(400).json({result })
-        }
-
-        res.status(200).json({ result })
-    } catch (e: any) {
-        e.Custommessage =e.message
-        next(e)
-
-    }
-
-}
-
-const UpdateUser = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.UpdateUser(req.params.id as string, req.body)
-         if(!result.success){
-          return res.status(400).json({result })
-        }
-         return res.status(200).json({ result })
-    } catch (e: any) {
-        e.customeMessage=e.message
-        next(e)
-    }
-
-}
-
-
-const DeleteUserProfile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.DeleteUserProfile(req.params.id as string)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(201).json({ result })
-    } catch (e: any) {
-        next(e)
-    }
-
-}
-
-const OwnProfileDelete = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        console.log('lkdsjfsdjfljslkdfjlkdsjfa')
-        const user = req.user
-        if (!user) {
-            return res.status(401).json({ success: false, message: "you are unauthorized" })
-        }
-        const result = await UserService.OwnProfileDelete(user.id as string)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-           res.status(201).json({ result })
-    } catch (e: any) {
-        next(e)
-    }
-
-}
+const OwnProfileDelete = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return res
+      .status(401)
+      .json({ success: false, message: "you are unauthorized" });
+  }
+  const result = await UserService.OwnProfileDelete(user.id as string);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "user own account delete successfully",
+    data:result
+  });
+});
 
 export const UserController = {
-    GetAllUsers,
-    UpdateUser,
-    getUserprofile,
-    UpateUserProfile,
-    DeleteUserProfile,
-    OwnProfileDelete
-}
+  GetAllUsers,
+  UpdateUser,
+  getUserprofile,
+  UpateUserProfile,
+  DeleteUserProfile,
+  OwnProfileDelete,
+};

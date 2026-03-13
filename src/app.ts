@@ -1,6 +1,4 @@
-import express from 'express'
-import cors from 'cors'
-import cookieParser from "cookie-parser";
+import express from "express"
 import { auth } from './lib/auth';
 import { toNodeHandler } from "better-auth/node";
 import { authRouter } from './modules/auth/auth.route';
@@ -13,8 +11,8 @@ import { CategoryRouter } from './modules/category/category.route';
 import { UserRouter } from './modules/user/user.route';
 import { ReviewsRouter } from './modules/reviews/reviews.route';
 import { StatsRouter } from './modules/stats/stats.route';
-
-
+import cookieParser from "cookie-parser";
+import cors from "cors";
 const app = express()
 // middleware
 app.use(express.json());

@@ -12,7 +12,7 @@ enum Status {
 model User {
   id            String    @id
   name          String
-  email         String
+  email         String @unique
   emailVerified Boolean   @default(false)
   image         String?
   bgimage       String?
@@ -30,8 +30,6 @@ model User {
   orders   Order[]
   category Category[]
   provider ProviderProfile?
-
-  @@unique([email])
   @@map("user")
 }
 model Session {

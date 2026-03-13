@@ -1,118 +1,96 @@
-import z, { success } from "zod"
-import { Category } from "../../../generated/prisma/client"
-import { prisma } from "../../lib/prisma"
-import { formatZodIssues } from "../../utils/handleZodError"
+import { prisma } from "../../lib/prisma";
+import { formatZodIssues } from "../../utils/handleZodError";
+import { UpdatecategoryData } from "./category.validation";
+import { ICreateCategory, IUpdateCategory } from "./category.interface";
+import AppError from "../../errorHelper/AppError";
+import status from "http-status";
+const CreateCategory = async (data: ICreateCategory, adminId: string) => {
+  const categorydata = await prisma.category.findUnique({
+    where: {
+      name: data.name,
+    },
+  });
 
-const CreateCategory = async (data: { name: string,image:string }, adminId: string) => {
-  const categoryData = z.object({
-    name: z.string(),
-    image:z.string()
-  }).strict()
-  const parseData = categoryData.safeParse(data)
-  console.log(parseData,'dl')
-  if (!parseData.success) {
-    return {
-      success: false,
-      message: `your provided data is invalid`,
-      data: formatZodIssues(parseData.error)
-    }
+  if (categorydata) {
+    throw new AppError(409, "Category already exists");
   }
-  const categorydata=await prisma.category.findUnique({
-    where:{
-      name:data.name
-    }
-  })
-  if(categorydata){
-   throw new Error("category already exists")
-  }
-  await prisma.user.findUniqueOrThrow({ where: { id: adminId } })
+
+  await prisma.user.findUniqueOrThrow({
+    where: { id: adminId },
+  });
+
   const result = await prisma.category.create({
     data: {
-      name: parseData.data.name,
-      image:parseData.data.image,
-      adminId: adminId
-    }
-  })
-    return {
-    success:true,
-    message:`your category has been created`,
-    result
-  }
+      ...data,
+      adminId: adminId,
+    },
+  });
 
-}
-
+  return result;
+};
 
 const getCategory = async () => {
-  const result = await prisma.category.findMany({ include: { meals: {where:{
-    status:"APPROVED"
-  }}, user: true },orderBy:{name:'desc'} })
-  return result
-
-}
+  const result = await prisma.category.findMany({
+    include: {
+      meals: {
+        where: {
+          status: "APPROVED",
+        },
+      },
+      user: true,
+    },
+    orderBy: { name: "desc" },
+  });
+  return result;
+};
 
 const SingleCategory = async (id: string) => {
   const result = await prisma.category.findFirstOrThrow({
     where: { id },
-    include: { meals: {
-      include:{
-        reviews:true
-      }
-    }
-      , user: true }
-  })
-  return {
-    success: true,
-    message: `retrieve single category successfully`,
-    result
-  }
+    include: {
+      meals: {
+        include: {
+          reviews: true,
+        },
+      },
+      user: true,
+    },
+  });
+  return result;
+};
 
-}
-
-const UpdateCategory = async (id: string, data: Partial<Category>) => {
-  const categoryData = z.object({
-    name: z.string().optional(),
-    image:z.string().optional()
-  }).strict()
-  const parseData = categoryData.safeParse(data)
-  if (!parseData.success) {
-    return {
-      success: false,
-      message: `your provided data is invalid`,
-      data: formatZodIssues(parseData.error)
-    }
-  }
+const UpdateCategory = async (id: string, data: IUpdateCategory) => {
+ 
   const { name } = data;
-  const existcategory = await prisma.category.findUniqueOrThrow({ where: { id } })
+  const existcategory = await prisma.category.findUniqueOrThrow({
+    where: { id },
+  });
   if (existcategory.name == name) {
-    throw new Error("Category name is already up to date.")
-
+    throw new AppError(409,"Category name is already up to date.");
   }
   const result = await prisma.category.update({
     where: {
-      id
+      id,
     },
     data: {
-      name:parseData.data.name,
-      image:parseData.data.image
-    }
-  })
-  return {
-    success:true,
-    message:`your category has beed changed`,
-    result}
-}
+      ...data
+    },
+  });
+  return result;
+};
 
 const DeleteCategory = async (id: string) => {
-  await prisma.category.findUniqueOrThrow({ where: { id } })
+  await prisma.category.findUniqueOrThrow({ where: { id } });
   const result = await prisma.category.delete({
-    where: { id }
-  })
-  return {
-    success:true,
-    message:`your category data successfully`,
-    result}
+    where: { id },
+  });
+  return result;
+};
 
-}
-
-
-export const categoryService = { CreateCategory, getCategory, UpdateCategory, DeleteCategory, SingleCategory }
+export const categoryService = {
+  CreateCategory,
+  getCategory,
+  UpdateCategory,
+  DeleteCategory,
+  SingleCategory,
+};

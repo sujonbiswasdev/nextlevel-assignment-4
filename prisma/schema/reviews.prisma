@@ -1,6 +1,6 @@
 model Review {
   id         String      @id @default(uuid())
-  customerId String
+  providerid String
   mealId     String
   parentId String?
   rating     Int
@@ -11,7 +11,7 @@ model Review {
   // relationship
   parent   Review?  @relation("reviewsReply", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Review[] @relation("reviewsReply")
-  customer User @relation(fields: [customerId],references: [id],onDelete: Cascade)
+  provider ProviderProfile @relation(fields: [providerid],references: [id],onDelete: Cascade)
   meal Meal @relation(fields: [mealId],references: [id],onDelete: Cascade)
   @@map("review")
 }

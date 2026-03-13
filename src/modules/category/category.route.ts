@@ -2,13 +2,15 @@ import { Router } from "express";
 import { UserRoles } from "../../middleware/auth.const";
 import { CategoryController } from "./category.controller";
 import auth from "../../middleware/auth";
+import { validateRequest } from "../../middleware/validateRequest";
+import { createcategoryData, UpdatecategoryData } from "./category.validation";
 
 const router=Router()
 
-router.post("/admin/category",auth([UserRoles.Admin]),CategoryController.CreateCategory)
+router.post("/admin/category",auth([UserRoles.Admin]),validateRequest(createcategoryData),CategoryController.CreateCategory)
 router.get("/category",CategoryController.getCategory)
 router.get("/category/:id",CategoryController.SingleCategory)
-router.put("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.UpdateCategory)
+router.put("/admin/category/:id",auth([UserRoles.Admin]),validateRequest(UpdatecategoryData),CategoryController.UpdateCategory)
 router.delete("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.DeleteCategory)
 
 export const CategoryRouter={router}

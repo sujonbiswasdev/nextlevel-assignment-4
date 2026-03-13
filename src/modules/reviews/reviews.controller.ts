@@ -1,87 +1,85 @@
 import { NextFunction, Request, Response } from "express"
 import { ReviewsService } from "./reviews.service"
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
+import status from "http-status";
 
-const CreateReviews = async (req: Request, res: Response,next:NextFunction) => {
-    console.log('jlsjfjskdlfjskdljfklsdjf',req)
-    try {
-          const users = req.user
-        if (!users) {
+const CreateReviews =catchAsync(async (req: Request, res: Response) => {
+         const user = req.user
+        if (!user) {
            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
-        const result=await ReviewsService.CreateReviews(users.id,req.params.id as string,req.body)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(201).json({result})
-    } catch (e:any) {
-            next(e.message)
-    }
-}
+        const result=await ReviewsService.CreateReviews(user.id,req.params.id as string,req.body)
+        sendResponse(res,{
+            httpStatusCode:status.CREATED,
+            success:true,
+            message:'your review has been created successfully',
+            data:result
 
-const updateReview = async (req: Request, res: Response,next:NextFunction) => {
-    try {
-        const user = req.user;
+        })
+})
+
+const updateReview = catchAsync(async (req: Request, res: Response) => {
+      const user = req.user;
+       if (!user) {
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
+        }
         const { reviewid } = req.params;
         const result = await ReviewsService.updateReview(reviewid as string, req.body, user?.id as string)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-         res.status(200).json({result})
-    } catch (e:any) {
-        next(e.message)
-    }
-}
+            sendResponse(res,{
+                httpStatusCode:status.OK,
+                success:true,
+                message:"review update successfully",
+                data:result
+            })
+} )
 
-const deleteReview = async (req: Request, res: Response,next:NextFunction) => {
-    try {
-        const user = req.user;
+const deleteReview = catchAsync(async (req: Request, res: Response) => {
+      const user = req.user;
+       if (!user) {
+           return res.status(401).json({ success: false, message: "you are unauthorized" })
+        }
         const { reviewid } = req.params;
         const result = await ReviewsService.deleteReview(reviewid as string, user?.id as string)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(200).json({result})
-    } catch (e:any) {
-        next(e)
-    }
+            sendResponse(res,{
+                httpStatusCode:status.OK,
+                success:true,
+                message:"review delete successfully",
+                data:result
+            })
 }
+)
 
-const moderateReview = async (req: Request, res: Response,next:NextFunction) => {
-    try {
-        const { reviewId } = req.params;
-        const result = await ReviewsService.moderateReview(reviewId as string, req.body)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-         res.status(200).json({result})
-    } catch (e:any) {
-        next(e.message)
-    }
-}
+const moderateReview = catchAsync(async (req: Request, res: Response) => {
+        const { reviewid } = req.params;
+        const result = await ReviewsService.moderateReview(reviewid as string, req.body)
+            sendResponse(res,{
+                httpStatusCode:status.OK,
+                success:true,
+                message:"review moderate successfully",
+                data:result
+                })
+})
 
-
-const getReviewByid = async (req: Request, res: Response,next:NextFunction) => {
-    try {
-        const  {reviewid}  = req.params;
+const getReviewByid = catchAsync(async (req: Request, res: Response) => {
+            const  {reviewid}  = req.params;
         const result = await ReviewsService.getReviewByid(reviewid as string)
-         if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(200).json({result})
-    } catch (e:any) {
-        next(e)
-    }
+            sendResponse(res,{
+                httpStatusCode:status.OK,
+                success:true,
+                message:"retrieve review by id successfully",
+                data:result
+            })
 }
-const getAllreviews=async (req: Request, res: Response,next:NextFunction) => {
-    try {
-        const  {reviewid}  = req.params;
-        const result = await ReviewsService.getAllreviews()
-         if(!result.success){
-            res.status(400).json({result })
-        }
-        res.status(200).json({result})
-    } catch (e:any) {
-        next(e)
-    }
+)
+const getAllreviews=catchAsync(async (req: Request, res: Response) => {
+    const result = await ReviewsService.getAllreviews()
+    sendResponse(res,{
+        httpStatusCode:status.OK,
+        success:true,
+        message:"retrieve all reviews successfully",
+        data:result
+    })
 }
+)
 export const ReviewsController={CreateReviews,updateReview,deleteReview,getReviewByid,moderateReview,getAllreviews}

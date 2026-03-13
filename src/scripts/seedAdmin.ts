@@ -1,37 +1,38 @@
-import { auth } from "../lib/auth"
+import "dotenv/config"
 import { prisma } from "../lib/prisma"
+import { auth } from "../lib/auth"
 
 const seedAdmin = async () => {
-    try {
-        const existingUser = await prisma.user.findUnique({
-            where: {
-                email: process.env.email
-            }
-        })
-        if (existingUser) {
-            throw new Error("User Already existing")
-        }
-        const data = await auth.api.signUpEmail({
-            body: {
-                name: "admin user",
-                email: process.env.email as string,
-                password: process.env.password as string,
-                role: "Admin",
-                bgimage:""
+  try {
 
+    console.log(process.env.EMAIL, "initial mail")
 
-            },
-        });
-        if(data){
-            console.log('admin user created sucessfully')
-            return {message:"Admin user created successfully"};
-            
-        }
-        console.log('Admin user created fail')
-        return "Admin user created fail";
-    } catch (error: any) {
-        console.log(error.message)
+    const existingAdmin = await prisma.user.findUnique({
+      where: {
+        email: process.env.EMAIL
+      }
+    })
+    
+    if (existingAdmin) {
+      console.log("Admin already exists")
+      return
     }
 
+    const data = await auth.api.signUpEmail({
+      body: {
+        name: "admin user",
+        email: process.env.EMAIL as string,
+        password: process.env.PASSWORD as string,
+        role: "Admin",
+        bgimage: "",
+      },
+    })
+
+    console.log("Admin created")
+
+  } catch (error: any) {
+    console.log(error)
+  }
 }
+
 seedAdmin()

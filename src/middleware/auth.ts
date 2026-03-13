@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import { auth as betterAuth } from '../lib/auth'
+import status from "http-status"
+import AppError from "../errorHelper/AppError"
 
 const auth = (roles: string[]) => {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -9,7 +11,7 @@ const auth = (roles: string[]) => {
             headers: req.headers as any
         })
         if (!session) {
-            return res.status(401).json({
+            return res.status(status.UNAUTHORIZED).json({
                 success: false,
                 message: "You are Unauthorized"
             })
@@ -25,17 +27,15 @@ const auth = (roles: string[]) => {
         }
 
          if (roles.length && !roles.includes(req.user.role)) {
-                return res.status(403).json({
+                return res.status(status.FORBIDDEN).json({
                     success: false,
-                    message: "Forbidden! You don't have permission to access this resources!"
+                    message: "Access denied: You do not have the required permissions to perform this action."
                 })
             }
-            console.log(
-                roles
-            )
+           
         next()
        } catch (error) {
-        
+        throw new AppError(status.BAD_REQUEST,"Authentication failed")
        }
     }
 }

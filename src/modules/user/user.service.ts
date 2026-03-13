@@ -1,216 +1,202 @@
-import { Account, Role, Status, User } from "../../../generated/prisma/client"
-import { prisma } from "../../lib/prisma"
-import { UserWhereInput } from "../../../generated/prisma/models"
-import z, { email } from 'zod';
-import { formatZodIssues } from '../../utils/handleZodError';
+import { Account, Role, Status, User } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
+import { UserWhereInput } from "../../../generated/prisma/models";
+import status from "http-status";
+import AppError from "../../errorHelper/AppError";
+import { UserQueryOptions } from "./user.interface";
 
-const GetAllUsers = async (data: { email?: string, emailVerified?: boolean, role?: string, status?: string,phone?:string }, isactivequery: boolean,page?: number, limit?: number | undefined, skip?: number, sortBy?: string | undefined, sortOrder?: string | undefined) => {
-  const andCondition: UserWhereInput[] = []
-  if (typeof data.email == 'string') {
+const GetAllUsers = async (
+ data:UserQueryOptions
+) => {
+  const andCondition: UserWhereInput[] = [];
+  if (typeof data.data?.email == "string") {
     andCondition.push({
-      email: data.email
-    })
+      email: data.data?.email,
+    });
   }
-  if (typeof data.phone == 'string') {
+  if (typeof data.data?.phone == "string") {
     andCondition.push({
-      email: data.phone
-    })
+      email: data.data?.phone,
+    });
   }
-  if (typeof data.emailVerified == 'boolean') {
-    andCondition.push({ emailVerified: data.emailVerified })
+  if (typeof data.data?.emailVerified == "boolean") {
+    andCondition.push({ emailVerified: data.data?.emailVerified });
   }
-  if (typeof data.role == 'string') {
-    andCondition.push({ role: data.role as Role })
+  if (typeof data.data?.role == "string") {
+    andCondition.push({ role: data.data?.role as Role });
   }
-  if (typeof data.status == 'string') {
-    andCondition.push({ status: data.status as Status })
+  if (typeof data.data?.status == "string") {
+    andCondition.push({ status: data.data?.status as Status });
   }
 
-  if (typeof isactivequery == 'boolean') {
-    andCondition.push({ isActive: isactivequery })
+  if (typeof data.isactivequery == "boolean") {
+    andCondition.push({ isActive: data.isactivequery });
   }
 
   const result = await prisma.user.findMany({
-    take:limit,
-    skip,
+    take: data.limit,
+    skip:data.skip,
     where: {
-      AND: andCondition
-
+      AND: andCondition,
     },
     include: {
       provider: true,
     },
     orderBy: {
-      [sortBy!]: sortOrder
-    }
-  })
+      [data.sortBy!]: data.sortOrder,
+    },
+  });
   const totalusers = await prisma.user.count({
     where: {
-      AND: andCondition
-    }
+      AND: andCondition,
+    },
   });
   return {
-    success:  true ,
-    message: "retrieve all user has been successfully" ,
     data: result,
     pagination: {
-            totalusers,
-            page,
-            limit,
-            totalpage: Math.ceil(totalusers / limit!) || 1
-        },
-  }
-}
+      totalusers,
+      page:data.page,
+      limit:data.limit,
+      totalpage: Math.ceil(totalusers / data.limit!) || 1,
+    },
+  };
+};
+
 const getUserprofile = async (id: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  if(!user){
+    throw new AppError(status.NOT_FOUND, "user not found for this id")
 
-  const result = await prisma.user.findUniqueOrThrow({
-    where: { id }
-  })
-  return {
-    success:  true ,
-    message:  `you user profile has been retrieved successfully`,
-    result
+  }
+  if (user.role !== "Provider") {
+    return user
   }
 
-}
-const UpateUserProfile = async (data: Partial<User & Account>, userid: string) => {
-
-  const usersData = z.object({
-    name: z.string().optional(),
-    image: z.string().optional(),
-    bgimage:z.string().optional(),
-    email: z.string().optional(),
-    password: z.string().min(8).optional(),
-    phone: z.string().min(10).max(15).optional(),
-    isActive:z.boolean().optional()
-  }).strict()
-
-  const parseData = usersData.safeParse(data)
-
-  if (!parseData.success) {
-    return {
-      success: false,
-      message: "your profile updated failed",
-      data: formatZodIssues(parseData.error)
-    }
-  }
-
-  
-  if (!data) {
-    throw new Error("your data isn't found,please provide a information")
-  }
-  const userinfo = await prisma.user.findUniqueOrThrow({
-    where: { id: userid },
-    include: {
-      accounts: true
-    }
-  })
-  if (!userinfo) {
-    throw new Error('user data not found')
-  }
-  const isCustomer = userinfo.role == 'Customer'
-  const result = await prisma.user.update({
-    where: { id: userid },
-    data: {
-      name: parseData.data.name,
-      image: parseData.data.image,
-      bgimage:parseData.data.bgimage,
-      phone: parseData.data.phone,
-      isActive:parseData.data.isActive,
-      ...isCustomer ? {} : { email: parseData.data.email },
-      accounts: {
-        updateMany: {
-          where: { userId: userid },
-          data: {
-            password: parseData.data.password
+  const providerProfile = await prisma.providerProfile.findUnique({
+    where: {
+      userId: id,
+    },
+    include:{
+      user:{
+        include:{
+          reviews:{
+            where:{
+              rating:{
+                gt:0
+              },
+              parentId:null
+            }
           }
         }
       }
     }
-  })
+  });
+    const totalReview = providerProfile?.user.reviews.length;
 
+    const averageRating = totalReview
+      ? providerProfile.user.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReview
+      : 0;
   return {
-    success:true,
-    message:"your profile has been updated successfully",
-    result
+      ...user,
+      providerProfile,
+      totalReview: totalReview || 0,
+      averageRating: Number(averageRating.toFixed(1)) || 0
+  
+  };
+};
+
+const UpateUserProfile = async (
+  data: Partial<User & Account>,
+  userid: string,
+) => {
+
+  if (!data) {
+    throw new AppError(400,"your data isn't found,please provide a information");
   }
+  const userinfo = await prisma.user.findUnique({
+    where: { id: userid },
+    include: {
+      accounts: true,
+    },
+  });
+  if (!userinfo) {
+    throw new AppError(404,"user data not found");
+  }
+  const isCustomer = userinfo.role == "Customer";
+  const result = await prisma.user.update({
+    where: { id: userid },
+    data: {
+      name: data.name,
+      image: data.image,
+      bgimage: data.bgimage,
+      phone: data.phone,
+      isActive: data.isActive,
+      ...(isCustomer ? {} : { email: data.email }),
+      accounts: {
+        updateMany: {
+          where: { userId: userid },
+          data: {
+            password: data.password,
+          },
+        },
+      },
+    },
+  });
 
-
-}
+  return result
+};
 const UpdateUser = async (id: string, data: Partial<User>) => {
-  const roleData = z.object({
-    role: z.enum(['Admin', 'Customer', 'Provider']).optional(),
-    status:z.enum(['activate','suspend']).optional(),
-    email:z.string().optional()
-  }).strict()
-
-  const parseData = roleData.safeParse(data)
-
-  if (!parseData.success) {
-    return {
-      success: false,
-      message: "your profile updated failed",
-      data: formatZodIssues(parseData.error)
-    }
-  }
-  const userData = await prisma.user.findUnique({ where: { id } })
+  const userData = await prisma.user.findUnique({ where: { id } });
   if (!userData) {
-    throw new Error("your user data didn't found")
+    throw new AppError(404,"your user data didn't found");
   }
-  if (userData.role == parseData.data.role) {
-    throw new Error(`your status(${parseData.data.role}) already up to date`)
+  if (userData.role == data.role) {
+    throw new AppError(409,`your status(${data.role}) already up to date`);
   }
   const result = await prisma.user.update({
     where: {
-      id
+      id,
     },
     data: {
-      role: parseData.data.role,
-      status:parseData.data.status,
-      email:parseData.data.email
-    }
-  })
-  return {
-    success: true,
-    message:  `your user role (${parseData.data.role}) has been changed successfully`,
-    result
-  }
-}
-
+      role: data.role,
+      status: data.status,
+      email: data.email,
+    },
+  });
+  return result
+};
 
 const DeleteUserProfile = async (id: string) => {
-  const userData = await prisma.user.findUniqueOrThrow({ where: { id } })
+  const userData = await prisma.user.findUnique({ where: { id } });
   if (!userData) {
-    throw new Error("your user data didn't found")
+    throw new AppError(404,"your user data didn't found");
   }
   const result = await prisma.user.delete({
-    where: { id }
-  })
-  return {
-    success:  true ,
-    message: "user account delete successfully",
-    result
-  }
-
-}
+    where: { id },
+  });
+  return result
+};
 
 const OwnProfileDelete = async (userid: string) => {
-  console.log(userid)
-  const userData = await prisma.user.findUniqueOrThrow({ where: { id: userid } })
+  console.log(userid);
+  const userData = await prisma.user.findUnique({
+    where: { id: userid },
+  });
   if (!userData) {
-    throw new Error("your user data not found")
-  }
-  if (userData.id !== userid) {
-    throw new Error("your are not authorized")
+    throw new AppError(404,"your user data not found");
   }
   const result = await prisma.user.delete({
-    where: { id: userid }
-  })
-  return {
-    success:  true ,
-    message:  "user own account delete successfully",
-    result
-  }
-
-}
-export const UserService = { GetAllUsers, UpdateUser, getUserprofile, UpateUserProfile, DeleteUserProfile, OwnProfileDelete }
+    where: { id: userid },
+  });
+  return result;
+};
+export const UserService = {
+  GetAllUsers,
+  UpdateUser,
+  getUserprofile,
+  UpateUserProfile,
+  DeleteUserProfile,
+  OwnProfileDelete,
+};

@@ -1,47 +1,38 @@
-import { NextFunction, Request, Response } from "express"
+import status from "http-status";
+import AppError from "../errorHelper/AppError";
+import { TErrorSources } from "../interface/error.interface";
+import { NextFunction, Request, Response } from "express";
 import { Prisma } from "../../generated/prisma/client";
 
-function errorHandler (err:any, req:Request, res:Response, next:NextFunction) {
+function errorHandler (err: any, req: Request, res: Response, next: NextFunction) {
+    let statusCode: number = status.INTERNAL_SERVER_ERROR; // Default 500
+    let message: string = 'Internal Server Error';
+    let errorSources: TErrorSources[] = [];
 
-     let statusCode = 500;
-    let errorMessage = "Internal Server Error";
-    let errorDetails = err
+    // Prisma Validation Error
+    if (err instanceof Prisma.PrismaClientValidationError) {
+        statusCode = status.BAD_REQUEST;
+        message = "Validation Error";
+        errorSources.push({ message: err.message });
+    }
+    // ... আপনার বাকি Prisma Check গুলো ঠিক আছে ...
     
-    if(err instanceof Prisma.PrismaClientValidationError){
-        statusCode = 400;
-        errorMessage = "You provide incorrect field type or missing fields!"
-    }
-    else if (err instanceof Prisma.PrismaClientInitializationError) {
-        if (err.errorCode === "P1000") {
-            statusCode = 401;
-            errorMessage = "Authentication failed. Please check your creditials!"
-        }
-        else if (err.errorCode === "P1001") {
-            statusCode = 400;
-            errorMessage = "Can't reach database server"
-        }
-    }
-    else if(err instanceof Prisma.PrismaClientKnownRequestError){
-        if (err.code === "P2025") {
-            statusCode = 400;
-            errorMessage = "An operation failed because it depends on one or more records that were required but not found."
-        }
-        else if (err.code === "P2002") {
-            statusCode = 400;
-            errorMessage = "Duplicate key error"
-        }
-        else if (err.code === "P2003") {
-            statusCode = 400;
-            errorMessage = "Foreign key constraint failed"
-        }
-    }
-     else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
-        statusCode = 500;
-        errorMessage = "Error occurred during query execution"
+    // AppError handling (এখানেই সমস্যা ছিল)
+    else if (err instanceof AppError) {
+        // statusCode অবশ্যই err.statusCode হতে হবে, ৫০০০ নয়!
+        statusCode = err.statusCode || status.BAD_REQUEST; 
+        message = err.message;
+        errorSources.push({ message: err.message });
     }
 
- 
-  res.status(statusCode).json({message:errorMessage,error:errorDetails})
+    // রেসপন্স পাঠানোর ফরম্যাট
+    res.status(statusCode).json({
+        success: false,
+        message,
+        errorSources,
+        // ডেভেলপমেন্ট মোডে থাকলে স্ট্যাক ট্রেস দেখতে পারেন
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    });
 }
 
-export default errorHandler
+export default errorHandler;
