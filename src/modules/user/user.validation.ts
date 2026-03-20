@@ -12,7 +12,7 @@ export const UpdateuserProfileData = z
     })
     .strict();
 
-export const UpdataroleData = z
+export const UpdateUserCommonData = z
     .object({
       role: z.enum(["Admin", "Customer", "Provider"]).optional(),
       status: z.enum(["activate", "suspend"]).optional(),

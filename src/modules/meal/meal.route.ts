@@ -3,11 +3,11 @@ import auth from "../../middleware/auth";
 import { UserRoles } from "../../middleware/auth.const";
 import { mealController } from "./meal.controller";
 import { validateRequest } from "../../middleware/validateRequest";
-import { CreatemealData, UpdatemealData } from "./meal.validation";
+import { CreatemealData, mealupdateStatus, UpdatemealData } from "./meal.validation";
 
 const router=Router()
 router.get('/meals',mealController.Getallmeals)
-// router.get('/admin/meals',auth([UserRoles.Admin]),mealController.getAllMealsForAdmin)
+router.get('/admin/meals',auth([UserRoles.Admin]),mealController.getAllMealsForAdmin)
 router.get('/provider/meals/own',auth([UserRoles.Provider]),mealController.getownmeals)
 router.post('/provider/meal',auth([UserRoles.Provider]),validateRequest(CreatemealData),mealController.createMeal)
 router.delete('/provider/meal/:id',auth([UserRoles.Provider,UserRoles.Admin]),mealController.DeleteMeals)

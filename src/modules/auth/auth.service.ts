@@ -50,21 +50,21 @@ const signup = async (data: {
   address: string;
   description: string;
 }) => {
+  console.log(data,'data')
   const result = await auth.api.signUpEmail({
     body: {
       name: data.name, // required
       email: data.email, // required
       password: data.password, // required
       image: data.image,
+      phone:data.phone,
       bgimage: data.bgimage,
       role: data.role as "Provider" | "Customer",
     },
   });
-  try {
-    let provider;
-    if (data.role == "Provider") {
-      provider = await prisma.$transaction(async (tx) => {
-        await tx.providerProfile.create({
+
+    if (data.role === "Provider") {
+        await prisma.providerProfile.create({
           data: {
             userId: result.user.id,
             restaurantName: data.restaurantName,
@@ -72,9 +72,7 @@ const signup = async (data: {
             description: data.description,
           },
         });
-      });
-      return provider
-    }
+      }
 
     const accessToken = tokenUtils.getAccessToken({
       userId: result.user.id,
@@ -106,16 +104,7 @@ const signup = async (data: {
       token: result.token,
       accessToken,
       refreshToken,
-      provider,
     };
-  } catch (error) {
-    await prisma.user.delete({
-      where: {
-        id: result.user.id,
-      },
-    });
-    throw new AppError(400, "user created fail");
-  }
 };
 
 const signin = async (

@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { authService } from "./auth.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { tokenUtils } from "../../utils/token";

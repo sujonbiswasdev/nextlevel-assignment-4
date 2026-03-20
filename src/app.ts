@@ -3,7 +3,6 @@ import { auth } from './lib/auth';
 import { toNodeHandler } from "better-auth/node";
 import { authRouter } from './modules/auth/auth.route';
 import { mealRouter } from './modules/meal/meal.route';
-import errorHandler from './middleware/globalErrorHandeller';
 import {  Notfound } from './middleware/notFound';
 import { providerRouter } from './modules/provider/provider.route';
 import { OrderRouter } from './modules/order/order.route';
@@ -13,6 +12,7 @@ import { ReviewsRouter } from './modules/reviews/reviews.route';
 import { StatsRouter } from './modules/stats/stats.route';
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import errorHandler from "./middleware/globalErrorHandeller";
 const app = express()
 // middleware
 app.use(express.json());
@@ -22,7 +22,6 @@ app.use(cookieParser())
 app.use(cors({
     origin:"http://localhost:3000",
     credentials:true,
-    
 }))
 // meal
 app.use("/api",mealRouter.router)

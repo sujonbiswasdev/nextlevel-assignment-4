@@ -1,3 +1,4 @@
+import { Result } from './../../../generated/prisma/internal/prismaNamespace';
 import { prisma } from "../../lib/prisma";
 import { MealWhereInput } from "../../../generated/prisma/models";
 import { DietaryPreference } from "../../../generated/prisma/enums";
@@ -47,7 +48,6 @@ const getAllmeals = async (
   sortBy?: string | undefined,
   sortOrder?: string | undefined,
 ) => {
-  console.log(data, "data for busines");
   const andConditions: MealWhereInput[] | MealWhereInput = [];
   if (data) {
     const orConditions: any[] = [];
@@ -116,6 +116,7 @@ const getAllmeals = async (
     include: {
       provider: true,
       reviews: {
+        
         where: {
           parentId: null,
           rating: { gt: 0 },
@@ -190,6 +191,7 @@ const getSinglemeals = async (id: string) => {
         include: {
           replies: {
             include: {
+              customer:true,
               replies: true,
             },
           },
@@ -203,15 +205,17 @@ const getSinglemeals = async (id: string) => {
     },
   });
 
-  const providerRating = await prisma.review.aggregate({
+  const ratings = await prisma.review.groupBy({
+    by: ["mealId"],
     where: {
-      customer: {
-        provider: {
-          id: result.provider.id,
-        },
-      },
       rating: {
         gt: 0,
+      },
+      parentId: null,
+      meal: {
+        provider: {
+          userId: result.provider.userId,
+        },
       },
     },
     _avg: {
@@ -221,25 +225,34 @@ const getSinglemeals = async (id: string) => {
       rating: true,
     },
   });
+
+  const totalReview = ratings.reduce((sum, r) => sum + r._count.rating, 0);
+
+  const totalRating = ratings.reduce(
+    (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
+    0,
+  );
+
+  const averageRating = totalReview > 0 ? totalRating / totalReview : 0;
   return {
     ...result,
     providerRating: {
-      totalReview: providerRating._count.rating,
-      averageRating: providerRating._avg.rating ?? 0,
+      totalReview: totalReview??0,
+      averageRating: averageRating ?? 0,
     },
   };
 };
 
 const UpdateMeals = async (data: IUpdateMealsData, mealid: string) => {
   const { category_name } = data as any;
-    const existmeal = await prisma.meal.findUnique({
+  const existmeal = await prisma.meal.findUnique({
     where: { id: mealid },
   });
   if (!existmeal) {
-    throw new AppError(status.NOT_FOUND,"meals not found");
+    throw new AppError(status.NOT_FOUND, "meals not found");
   }
   if (existmeal.category_name === category_name) {
-    throw new AppError(status.CONFLICT,"category_name is already up to date.");
+    throw new AppError(status.CONFLICT, "category_name is already up to date.");
   }
   const result = await prisma.meal.update({
     where: {
@@ -267,6 +280,7 @@ const DeleteMeals = async (mealid: string) => {
       id: mealid,
     },
   });
+  console.log(result,'result')
 
   return result;
 };
@@ -295,8 +309,8 @@ const getOwnMeals = async (userid: string) => {
       },
     },
   });
-   const mealIds = meals.map((meal) => meal.id);
-   const reviewStats = await prisma.review.groupBy({
+  const mealIds = meals.map((meal) => meal.id);
+  const reviewStats = await prisma.review.groupBy({
     by: ["mealId"],
     where: {
       mealId: { in: mealIds },
@@ -323,19 +337,18 @@ const getOwnMeals = async (userid: string) => {
   return mealsWithStats;
 };
 
-const updateStatus = async (data: Partial<Meal>, mealid: string) => {
+const updateStatus = async (data: any, mealid: string) => {
   const { status } = data;
-
   const existmeal = await prisma.meal.findUnique({
     where: {
       id: mealid,
     },
   });
   if (existmeal?.status === status) {
-    throw new AppError(409,"meal status already up to date");
+    throw new AppError(409, "meal status already up to date");
   }
   if (existmeal?.id !== mealid) {
-    throw new AppError(404,"mealid is invalid,please check your mealid");
+    throw new AppError(404, "mealid is invalid,please check your mealid");
   }
   const result = await prisma.meal.update({
     where: {
@@ -345,8 +358,65 @@ const updateStatus = async (data: Partial<Meal>, mealid: string) => {
       status,
     },
   });
-  return result
+  return result;
 };
+const getAllMealsForAdmin=async(data: MealQuery,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  sortBy?: string | undefined,
+  sortOrder?: string | undefined,)=>{
+      const andConditions: MealWhereInput[] | MealWhereInput = [];
+
+     if (data) {
+    const orConditions: any[] = [];
+    if (data.meals_name) {
+      orConditions.push({
+        meals_name: {
+          contains: data.meals_name,
+          mode: "insensitive",
+        },
+      });
+    }
+    if (data.description) {
+      orConditions.push({
+        description: {
+          contains: data.description,
+          mode: "insensitive",
+        },
+      });
+    }
+    if (data.cuisine) {
+      orConditions.push({
+        cuisine: {
+          equals: data.cuisine,
+        },
+      });
+    }
+    if (data.category_name) {
+      orConditions.push({
+        category_name: {
+          contains: data.category_name,
+          mode: "insensitive",
+        },
+      });
+    }
+  }
+  const result = await prisma.meal.findMany({
+    take: limit,
+    skip,
+     where: {
+      AND: andConditions,
+      status: "APPROVED",
+    },
+    orderBy: {
+      [sortBy!]: sortOrder,
+    },
+  });
+  return result
+
+
+}
 
 export const mealService = {
   createMeal,
@@ -356,4 +426,5 @@ export const mealService = {
   getSinglemeals,
   getOwnMeals,
   updateStatus,
+  getAllMealsForAdmin
 };

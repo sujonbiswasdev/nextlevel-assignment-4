@@ -1,17 +1,15 @@
 model ProviderProfile {
-  id             String      @id @default(uuid())
-  userId         String      @unique
+  id             String   @id @default(uuid())
+  userId         String   @unique
   restaurantName String   @db.VarChar(100)
   address        String   @db.VarChar(200)
-  description    String?  @db.Text
+  description    String?
   image          String?  @db.VarChar(100)
-  
   createdAt      DateTime @default(now())
-  updatedAt  DateTime   @updatedAt
-  // relationship
-  reviews  Review[]
-  user   User @relation(fields: [userId], references: [id],onDelete: Cascade)
-  meals Meal[]
-  orders Order[]
+  updatedAt      DateTime @updatedAt
+  meals          Meal[]
+  orders         Order[]
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("providerprofile")
 }

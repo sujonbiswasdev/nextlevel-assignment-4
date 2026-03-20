@@ -65,3 +65,7 @@ export const mealQuerySchema = z.object({
   })
 });
 
+
+export const mealupdateStatus=z.object({
+    status:z.enum(["PENDING","APPROVED","REJECTED"])
+})

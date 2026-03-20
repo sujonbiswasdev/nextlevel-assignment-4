@@ -1,23 +1,23 @@
 model Meal {
-    id                String  @id @default(uuid())
-    meals_name              String  @db.VarChar(100)
-    description       String? @db.Text
-    image            String?
-    price             Int 
-    isAvailable       Boolean @default(true)
-    dietaryPreference DietaryPreference @default(HALAL)
-    providerId        String
-    category_name        String
-    cuisine    Cuisine @default(BANGLEDESHI)
-    status   MealsStatus   @default(APPROVED)
-    createdAt   DateTime        @default(now())
-    updatedAt  DateTime   @updatedAt
-    //   relationship
-    provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-    reviews     Review[]
-    orderitem      Orderitem[]
-    category Category        @relation(fields: [category_name], references: [name], onDelete: Cascade)
-    @@map("meal")
+  id                String            @id @default(uuid())
+  meals_name        String            @db.VarChar(100)
+  description       String?
+  image             String?
+  price             Int
+  isAvailable       Boolean           @default(true)
+  dietaryPreference DietaryPreference @default(HALAL)
+  providerId        String
+  category_name     String
+  cuisine           Cuisine           @default(BANGLEDESHI)
+  status            MealsStatus       @default(APPROVED)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  category          Category          @relation(fields: [category_name], references: [name], onDelete: Cascade)
+  provider          ProviderProfile   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  orderitem         Orderitem[]
+  reviews           Review[]
+
+  @@map("meal")
 }
 
 enum DietaryPreference {
@@ -46,6 +46,7 @@ enum Cuisine {
   AMERICAN
   MIDDLE_EASTERN
 }
+
 enum MealsStatus {
   PENDING
   APPROVED

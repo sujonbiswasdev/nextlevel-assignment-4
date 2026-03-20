@@ -54,9 +54,8 @@ const updateReview = async (reviewId: string, data: IUpdatereviewData, authorId:
             id: true
         }
     })
-    
     if (!review) {
-        throw new AppError(404,"review not found")
+        throw new AppError(404,"your review not found,please update your own review")
     }
 
     const result = await prisma.review.update({
@@ -77,17 +76,16 @@ const updateReview = async (reviewId: string, data: IUpdatereviewData, authorId:
 
 
 const deleteReview = async (reviewid: string, authorid: string) => {
-    const review = await prisma.review.findFirst({
+    const review = await prisma.review.findUnique({
         where: {
             id: reviewid,
-            customerId: authorid
         },
         select: {
             id: true
         }
     })
     if (!review) {
-        throw new AppError(404, "review not found for this id")
+        throw new AppError(404, "review not found")
     }
 
     const result = await prisma.review.delete({

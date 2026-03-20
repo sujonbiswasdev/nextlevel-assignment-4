@@ -385,8 +385,6 @@ console.log("TODAY LENGTH:", todayOrdersData.length)
             }
         }
     })
-
-    const orderid=await prisma.order.findFirstOrThrow({where:{providerId:existuser.provider!.id}})
     if (existuser.id !== userid) {
         throw new Error("you are unauthorize")
     }

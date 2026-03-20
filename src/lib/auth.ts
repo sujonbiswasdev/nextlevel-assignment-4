@@ -39,11 +39,18 @@ export const auth = betterAuth({
         }
     },
     plugins:[
-        bearer()
+        bearer(),
+        
     ],
+    emailVerification:{
+        autoSignInAfterVerification:true,
+        sendOnSignUp:true,
+        sendOnSignIn:true
+    },
     emailAndPassword: {
         enabled: true,
-        autoSignIn:true
+        autoSignIn:true,
+        // requireEmailVerification: true
     },
     socialProviders: {
         google: {

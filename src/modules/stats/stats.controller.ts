@@ -86,7 +86,7 @@ const getcategoryStats=catchAsync(async(req:Request,res:Response)=>{
         if (!user) {
            return res.status(401).json({ success: false, message: "you are unauthorized" })
         }
-        const result =await StatsService.getrevenueStats(user.id)
+        const result =await StatsService.getcategoryStats(user.id)
             sendResponse(res,{
                 httpStatusCode:status.OK,
                 success:true,

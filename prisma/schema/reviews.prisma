@@ -1,22 +1,22 @@
 model Review {
-  id         String      @id @default(uuid())
-  providerid String
+  id         String       @id @default(uuid())
+  customerId String
   mealId     String
-  parentId String?
+  parentId   String?
   rating     Int
-  status   ReviewStatus @default(APPROVED)
-  comment    String  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt  DateTime   @updatedAt
-  // relationship
-  parent   Review?  @relation("reviewsReply", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Review[] @relation("reviewsReply")
-  provider ProviderProfile @relation(fields: [providerid],references: [id],onDelete: Cascade)
-  meal Meal @relation(fields: [mealId],references: [id],onDelete: Cascade)
+  status     ReviewStatus @default(APPROVED)
+  comment    String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  customer   User         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  meal       Meal         @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  parent     Review?      @relation("reviewsReply", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Review[]     @relation("reviewsReply")
+
   @@map("review")
 }
 
 enum ReviewStatus {
-    APPROVED
-    REJECTED
+  APPROVED
+  REJECTED
 }

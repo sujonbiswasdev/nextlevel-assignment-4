@@ -1,37 +1,34 @@
 model Order {
-  id         String          @id @default(uuid()) 
+  id         String          @id @default(uuid())
   customerId String
   providerId String
   first_name String?
-  last_name String?
+  last_name  String?
   status     OrderStatus     @default(PLACED)
-  totalPrice Int 
-  phone      String? 
-  address    String          @db.Text
+  totalPrice Int
+  phone      String?
+  address    String
   createdAt  DateTime        @default(now())
-  updatedAt  DateTime   @updatedAt  
-  // relationship
-  orderitem Orderitem[]
+  updatedAt  DateTime        @updatedAt
   customer   User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
   provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
+  orderitem  Orderitem[]
 
   @@map("order")
 }
-model Orderitem{
-   id         String          @id @default(uuid()) 
-   orderId String
-   price   Float
-   quantity Int
-    mealId      String
-   order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-   @@map("orderitem")
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime   @updatedAt 
 
-  // relationship
+model Orderitem {
+  id        String   @id @default(uuid())
+  orderId   String
+  price     Float
+  quantity  Int
+  mealId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-    meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  @@map("orderitem")
 }
 
 enum OrderStatus {

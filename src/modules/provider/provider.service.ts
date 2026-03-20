@@ -28,61 +28,67 @@ const getAllProvider = async () => {
   const providers = await prisma.providerProfile.findMany({
     include: {
       user: true,
+      meals:{
+        include:{
+          reviews:true
+        }
+      }
     },
     orderBy: {
       createdAt: "desc",
     },
   });
-
-  const userid = providers.map((p) => p.userId)
-  const ratings = await prisma.review.groupBy({
-    by: ["mealId"],
-    where: {
-      rating: {
-        gt: 0,
-      },
-      parentId:null,
-      meal: {
-        provider: {
-          userId:{
-            in:userid
-          }
+  let i: number = 0;
+  const userid = providers.map((p) => p.userId);
+  console.log(userid.length, "userid");
+  for (i = 0; i < userid.length; i++) {
+    console.log(userid.length, "leng");
+    console.log(i, "idss");
+    const ratings = await prisma.review.aggregate({
+      where: {
+        rating: {
+          gt: 0,
+        },
+        parentId: null,
+        meal: {
+          provider: {
+            userId: userid[i],
+          },
         },
       },
-    },
-    _avg: {
-      rating: true,
-    },
-    _count: {
-      rating: true,
-    },
-  });
-
-  const providerWithRating = providers.map((provider) => {
-    const providerMeals = ratings.filter((r) => r.mealId && provider.userId);
-
-    const totalReview = providerMeals.reduce(
-      (sum, r) => sum + r._count.rating,
-      0,
-    );
-
-    const totalRating = providerMeals.reduce(
-      (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
-      0,
-    );
-
-    const averageRating = totalReview > 0 ? totalRating / totalReview : 0;
-
-    return {
-      ...provider,
-      rating: {
-        totalReview,
-        averageRating,
+      _avg: {
+        rating: true,
       },
-    };
-  });
+      _count: {
+        rating: true,
+      },
+    });
+    console.log(i, "id");
+    console.log(userid[i], "ratingdata");
 
-  return providerWithRating;
+    const providerWithRating = providers.map((provider) => {
+      // const providerMeals = ratings._avg.rating;
+
+      const totalReview = ratings._count.rating;
+
+      // const totalRating = providerMeals.reduce(
+      //   (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
+      //   0,
+      // );
+
+      const averageRating = ratings._avg.rating;
+
+      return {
+        ...provider,
+        rating: {
+          totalReview,
+          averageRating,
+        },
+      };
+    });
+
+    return providerWithRating;
+  }
 };
 
 const getProviderWithMeals = async (id: string) => {
@@ -96,12 +102,12 @@ const getProviderWithMeals = async (id: string) => {
     where: { id },
     include: {
       user: {
-       include:{
-        reviews:true
-       }
+        include: {
+          reviews: true,
+        },
       },
       meals: {
-        include: { category: true },
+        include: { category: true ,reviews:true},
         orderBy: { createdAt: "desc" },
       },
     },
@@ -109,17 +115,17 @@ const getProviderWithMeals = async (id: string) => {
   if (!provider) {
     throw new AppError(status.NOT_FOUND, "provider not found for this id");
   }
-  const userid=provider.userId
-    const ratings = await prisma.review.groupBy({
+  const userid = provider.userId;
+  const ratings = await prisma.review.groupBy({
     by: ["mealId"],
     where: {
       rating: {
         gt: 0,
       },
-      parentId:null,
+      parentId: null,
       meal: {
         provider: {
-          userId: userid
+          userId: userid,
         },
       },
     },
@@ -131,17 +137,14 @@ const getProviderWithMeals = async (id: string) => {
     },
   });
 
-      const totalReview = ratings.reduce(
-      (sum, r) => sum + r._count.rating,
-      0,
-    );
+  const totalReview = ratings.reduce((sum, r) => sum + r._count.rating, 0);
 
-    const totalRating = ratings.reduce(
-      (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
-      0,
-    );
+  const totalRating = ratings.reduce(
+    (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
+    0,
+  );
 
-    const averageRating = totalReview > 0 ? totalRating / totalReview : 0;
+  const averageRating = totalReview > 0 ? totalRating / totalReview : 0;
 
   return {
     result: {

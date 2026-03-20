@@ -1,21 +1,23 @@
-import "dotenv/config"
-import { prisma } from "../lib/prisma"
-import { auth } from "../lib/auth"
+import "dotenv/config";
+import { prisma } from "../lib/prisma";
+import { auth } from "../lib/auth";
+import { tokenUtils } from "../utils/token";
+import { Request, Response } from "express";
+import { sendResponse } from "../shared/sendResponse";
 
-const seedAdmin = async () => {
+export const seedAdmin = async () => {
   try {
-
-    console.log(process.env.EMAIL, "initial mail")
+    console.log(process.env.EMAIL, "initial mail");
 
     const existingAdmin = await prisma.user.findUnique({
       where: {
-        email: process.env.EMAIL
-      }
-    })
-    
+        email: process.env.EMAIL,
+      },
+    });
+
     if (existingAdmin) {
-      console.log("Admin already exists")
-      return
+      console.log("Admin already exists");
+      return;
     }
 
     const data = await auth.api.signUpEmail({
@@ -25,14 +27,13 @@ const seedAdmin = async () => {
         password: process.env.PASSWORD as string,
         role: "Admin",
         bgimage: "",
+        phone: "01804935939",
       },
-    })
-
-    console.log("Admin created")
-
+    });
+    console.log("Admin created");
   } catch (error: any) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
 
 seedAdmin()

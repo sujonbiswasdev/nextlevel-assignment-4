@@ -6,7 +6,7 @@ import { validateRequest } from "../../middleware/validateRequest";
 import { createReviewsData, moderateData, updateReviewsData } from "./reviews.validation";
 
 const router = Router()
-router.post('/meal/:id/reviews', auth([UserRoles.Customer]),validateRequest(createReviewsData), ReviewsController.CreateReviews)
+router.post('/meal/:id/review', auth([UserRoles.Customer]),validateRequest(createReviewsData), ReviewsController.CreateReviews)
 router.put("/review/:reviewid", auth([UserRoles.Customer]),validateRequest(updateReviewsData), ReviewsController.updateReview)
 router.delete("/review/:reviewid", auth([UserRoles.Customer, UserRoles.Admin]), ReviewsController.deleteReview)
 router.get("/reviews", ReviewsController.getAllreviews)
