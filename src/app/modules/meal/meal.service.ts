@@ -1,8 +1,8 @@
-import { Result } from './../../../generated/prisma/internal/prismaNamespace';
+import { Result } from '../../../../generated/prisma/internal/prismaNamespace';
 import { prisma } from "../../lib/prisma";
-import { MealWhereInput } from "../../../generated/prisma/models";
-import { DietaryPreference } from "../../../generated/prisma/enums";
-import { Meal } from "../../../generated/prisma/client";
+import { MealWhereInput } from "../../../../generated/prisma/models";
+import { DietaryPreference } from "../../../../generated/prisma/enums";
+import { Meal } from "../../../../generated/prisma/client";
 import {
   ICreateMealsData,
   IMealQueryRequest,

@@ -7,15 +7,19 @@ import { jwtUtils } from "../../utils/jwt";
 import { JwtPayload } from "jsonwebtoken";
 import { ISignupData } from "./auth.interface";
 
-const getCurrentUser = async (id: string) => {
-  return await prisma.user.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      provider: true,
-    },
+const getCurrentUser = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email:email },
+    include: { provider: true },
   });
+
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+  if (!user.isActive) {
+    throw new AppError(status.UNAUTHORIZED, "User account is not active");
+  }
+ return user
 };
 
 const signoutUser = async (id: string, sessionToken : string) => {

@@ -2,7 +2,7 @@ import { betterAuth, string } from "better-auth";
 import { prisma } from "./prisma";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { bearer } from "better-auth/plugins";
-import { Role, Status } from "../../generated/prisma/enums";
+import { Role, Status } from "../../../generated/prisma/enums";
 
 console.log(process.env.FRONTEND_URL,'s')
 console.log(process.env.BETTER_AUTH_SECRET,'s')

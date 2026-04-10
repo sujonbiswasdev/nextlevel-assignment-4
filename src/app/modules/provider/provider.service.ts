@@ -1,5 +1,5 @@
 import z from "zod";
-import { ProviderProfile } from "../../../generated/prisma/client";
+import { ProviderProfile } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { formatZodIssues } from "../../utils/handleZodError";
 import { CreateproviderData, UpdateproviderData } from "./provider.validation";

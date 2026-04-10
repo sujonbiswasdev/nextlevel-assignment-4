@@ -4,7 +4,7 @@ import status from "http-status";
 import AppError from "../errorHelper/AppError";
 import { CookieUtils } from "../utils/cookie";
 import { prisma } from "../lib/prisma";
-import { Role } from "../../generated/prisma/enums";
+import { Role } from "../../../generated/prisma/enums";
 import { jwtUtils } from "../utils/jwt";
 
 const auth = (roles: string[]) => {
@@ -68,7 +68,6 @@ const auth = (roles: string[]) => {
             isActive: userData.isActive,
             name: userData.name,
             status: userData.status
-       
           };
           return next();
         }

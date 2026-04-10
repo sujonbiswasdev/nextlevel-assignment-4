@@ -1,5 +1,5 @@
 import z, { object } from "zod";
-import { ReviewStatus } from "../../../generated/prisma/enums"
+import { ReviewStatus } from "../../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
 import { formatZodIssues } from "../../utils/handleZodError";
 import { createReviewsData, updateReviewsData } from "./reviews.validation";

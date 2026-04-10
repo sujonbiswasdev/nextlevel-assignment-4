@@ -2,9 +2,6 @@ import { Router } from "express";
 import { authController } from "./auth.controller";
 import auth from "../../middleware/auth";
 import { UserRoles } from "../../middleware/auth.const";
-import { validateRequest } from "../../middleware/validateRequest";
-import { signupValidation } from "./auth.validation";
-
 const router=Router()
 router.get('/me',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),authController.getCurrentUser)
 

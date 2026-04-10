@@ -1,6 +1,6 @@
-import { Account, Role, Status, User } from "../../../generated/prisma/client";
+import { Account, Role, Status, User } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
-import { UserWhereInput } from "../../../generated/prisma/models";
+import { UserWhereInput } from "../../../../generated/prisma/models";
 import status from "http-status";
 import AppError from "../../errorHelper/AppError";
 import { UserQueryOptions } from "./user.interface";

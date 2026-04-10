@@ -4,13 +4,21 @@ export const signupValidation = z.object({
   name: z.string(),
   email: z.string().email(),
   password: z.string().min(6),
-  image: z.string().optional(),
+  image: z.any(),
   bgimage: z.string().optional(),
   phone: z.string(),
   role: z.string(),
   restaurantName: z.string(),
   address: z.string(),
   description: z.string(),
+});
+
+export const createUserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  phone: z.string().optional(),
+  image: z.any(),
 });
 export const updateValidation = z.object({
   name: z.string().optional(),

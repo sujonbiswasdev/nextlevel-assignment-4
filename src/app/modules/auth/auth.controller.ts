@@ -14,7 +14,7 @@ const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
       .status(401)
       .json({ success: false, message: "you are unauthorized" });
   }
-  const result = await authService.getCurrentUser(user.id);
+  const result = await authService.getCurrentUser(user.email);
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
@@ -72,6 +72,7 @@ const signup = catchAsync(async (req: Request, res: Response) => {
 const signin = catchAsync(async (req: Request, res: Response) => {
   const result = await authService.signin(req.body);
   const { accessToken, refreshToken, token } = result;
+  console.log(token,'token')
   tokenUtils.setAccessTokenCookie(res, accessToken);
   tokenUtils.setRefreshTokenCookie(res, refreshToken);
   tokenUtils.setBetterAuthSessionCookie(res, token as string);

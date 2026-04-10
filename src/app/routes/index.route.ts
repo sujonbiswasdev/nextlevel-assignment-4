@@ -1,0 +1,37 @@
+import { Router } from "express";
+import { mealRouter } from "../modules/meal/meal.route";
+import { providerRouter } from "../modules/provider/provider.route";
+import { OrderRouter } from "../modules/order/order.route";
+import { CategoryRouter } from "../modules/category/category.route";
+import { UserRouter } from "../modules/user/user.route";
+import { ReviewsRouter } from "../modules/reviews/reviews.route";
+import { StatsRouter } from "../modules/stats/stats.route";
+import { authRouter } from "../modules/auth/auth.route";
+
+const router = Router()
+
+// meal
+router.use("/v1",mealRouter.router)
+
+
+
+// provider
+router.use("/v1",providerRouter.router)
+// order
+router.use("/v1",OrderRouter.router)
+
+// category
+router.use("/v1",CategoryRouter.router)
+
+
+// users
+router.use("/v1",UserRouter.router)
+//reviews
+router.use('/v1',ReviewsRouter.router)
+
+//stats
+router.use('/v1',StatsRouter.router)
+// auth
+router.use("/v1/auth",authRouter.router)
+
+export const IndexRouter=router

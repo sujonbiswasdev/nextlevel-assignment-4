@@ -1,5 +1,5 @@
 import z from "zod";
-import { Order, Orderitem } from "../../../generated/prisma/client";
+import { Order, Orderitem } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { formatZodIssues } from "../../utils/handleZodError";
 import { CreateorderData } from "./order.validation";
