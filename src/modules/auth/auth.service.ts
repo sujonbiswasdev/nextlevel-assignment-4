@@ -5,6 +5,7 @@ import AppError from "../../errorHelper/AppError";
 import status from "http-status";
 import { jwtUtils } from "../../utils/jwt";
 import { JwtPayload } from "jsonwebtoken";
+import { ISignupData } from "./auth.interface";
 
 const getCurrentUser = async (id: string) => {
   return await prisma.user.findUnique({
@@ -37,18 +38,15 @@ const signoutUser = async (id: string, sessionToken : string) => {
   };
 };
 
-const signup = async (data: {
-  name: string;
-  email: string;
-  password: string;
-  image?: string;
-  bgimage?: string;
-  phone: string;
-  role: string;
-  restaurantName: string;
-  address: string;
-  description: string;
-}) => {
+const signup = async (data: ISignupData) => {
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: data.email,
+    },
+  });
+  if (existingUser) {
+    throw new AppError(status.CONFLICT,"Email already in use");
+  }
   const result = await auth.api.signUpEmail({
     body: {
       name: data.name, // required
@@ -60,8 +58,6 @@ const signup = async (data: {
       role: data.role as "Provider" | "Customer",
     },
   });
-  // console.log(result,'d')
-
     if (data.role === "Provider") {
         await prisma.providerProfile.create({
           data: {
@@ -73,36 +69,15 @@ const signup = async (data: {
         });
       }
 
-    const accessToken = tokenUtils.getAccessToken({
-      userId: result.user.id,
-      role: result.user.role,
-      name: result.user.name,
-      email: result.user.email,
-      status: result.user.status,
-      emailVerified: result.user.emailVerified,
-    });
-
-    const refreshToken = tokenUtils.getRefreshToken({
-      userId: result.user.id,
-      role: result.user.role,
-      name: result.user.name,
-      email: result.user.email,
-      status: result.user.status,
-      emailVerified: result.user.emailVerified,
-    });
-
     await auth.api.signInEmail({
       body: {
         email: data.email,
         password: data.password,
       },
     });
-
     return {
       ...result.user,
       token: result.token,
-      accessToken,
-      refreshToken,
     };
 };
 
@@ -214,23 +189,23 @@ const getNewToken = async (refreshToken : string, sessionToken : string) => {
 }
 
 const verifyEmail = async (email: string, otp: string) => {
-  const result = await auth.api.verifyEmailOTP({
-    body: {
-      email,
-      otp,
-    },
-  });
+  // const result = await auth.api.verifyEmailOTP({
+  //   body: {
+  //     email,
+  //     otp,
+  //   },
+  // });
 
-  if (result.status && !result.user.emailVerified) {
-    await prisma.user.update({
-      where: {
-        email,
-      },
-      data: {
-        emailVerified: true,
-      },
-    });
-  }
+  // if (result.status && !result.user.emailVerified) {
+  //   await prisma.user.update({
+  //     where: {
+  //       email,
+  //     },
+  //     data: {
+  //       emailVerified: true,
+  //     },
+  //   });
+  // }
 };
 export const authService = {
   getCurrentUser,

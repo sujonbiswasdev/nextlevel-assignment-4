@@ -4,8 +4,8 @@ model User {
   email         String           @unique
   emailVerified Boolean          @default(false)
   image         String?
-  bgimage       String?
-  phone         String          @db.VarChar(15)
+  bgimage       String?         @default("https://images.pexels.com/photos/8250184/pexels-photo-8250184.jpeg")
+  phone         String?          @db.VarChar(15)
   role          Role             @default(Customer)
   status        Status           @default(activate)
   isActive      Boolean          @default(true)

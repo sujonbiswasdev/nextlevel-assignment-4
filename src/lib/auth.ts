@@ -4,8 +4,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { bearer } from "better-auth/plugins";
 import { Role, Status } from "../../generated/prisma/enums";
 
+console.log(process.env.FRONTEND_URL,'s')
+console.log(process.env.BETTER_AUTH_SECRET,'s')
 
 export const auth = betterAuth({
+    secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.FRONTEND_URL,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -35,7 +38,11 @@ export const auth = betterAuth({
              bgimage: {
                 type: "string",
                 required: false,
-                defaultValue: true
+            },
+            emailVerified:{
+              type:'boolean',
+              required:false,
+              
             }
         }
     },
@@ -70,6 +77,7 @@ export const auth = betterAuth({
                 role: Role.Customer,
                 status: Status.activate,
                 emailVerified: true,
+                bgimage:""
               };
             },
           },

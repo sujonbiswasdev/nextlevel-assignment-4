@@ -23,30 +23,28 @@ app.use(cors({
     origin:"http://localhost:3000",
     credentials:true,
 }))
+app.all('/api/auth/*splat', toNodeHandler(auth));
 // meal
-app.use("/api",mealRouter.router)
+app.use("/api/v1",mealRouter.router)
 
 // provider
-app.use("/api",providerRouter.router)
+app.use("/api/v1",providerRouter.router)
 // order
-app.use("/api",OrderRouter.router)
+app.use("/api/v1",OrderRouter.router)
 
 // category
-app.use("/api",CategoryRouter.router)
+app.use("/api/v1",CategoryRouter.router)
 
 
 // users
-app.use("/api",UserRouter.router)
+app.use("/api/v1",UserRouter.router)
 //reviews
-app.use('/api',ReviewsRouter.router)
+app.use('/api/v1',ReviewsRouter.router)
 
 //stats
-app.use('/api',StatsRouter.router)
+app.use('/api/v1',StatsRouter.router)
 // auth
-app.use("/api/auth",authRouter.router)
-
-
-app.all('/api/auth/*splat', toNodeHandler(auth));
+app.use("/api/v1/auth",authRouter.router)
 
 app.get("/", (req, res) => {
     res.send("Hello, World!");

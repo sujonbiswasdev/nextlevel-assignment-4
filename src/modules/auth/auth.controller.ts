@@ -61,11 +61,6 @@ const signup = catchAsync(async (req: Request, res: Response) => {
   if (!result) {
     return res.status(400).json({ success: false, message: "Signup failed" });
   }
-  const { accessToken, refreshToken, token } = result;
-  tokenUtils.setAccessTokenCookie(res, accessToken);
-  tokenUtils.setRefreshTokenCookie(res, refreshToken);
-  tokenUtils.setBetterAuthSessionCookie(res, token as string);
-
   sendResponse(res, {
     httpStatusCode: status.CREATED,
     success: true,
