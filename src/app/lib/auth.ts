@@ -1,8 +1,9 @@
 import { betterAuth, string } from "better-auth";
 import { prisma } from "./prisma";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { bearer } from "better-auth/plugins";
+import { bearer, emailOTP } from "better-auth/plugins";
 import { Role, Status } from "../../../generated/prisma/enums";
+import { sendEmail } from "../utils/email";
 
 console.log(process.env.FRONTEND_URL,'s')
 console.log(process.env.BETTER_AUTH_SECRET,'s')
@@ -48,8 +49,63 @@ export const auth = betterAuth({
     },
     plugins:[
         bearer(),
+        emailOTP({
+          overrideDefaultEmailVerification: true,
+          async sendVerificationOTP({ email, otp, type }) {
+            if (type === "email-verification") {
+              const user = await prisma.user.findUnique({
+                where: {
+                  email,
+                },
+              });
+              if (user?.role === "Admin") {
+                await prisma.user.update({
+                  where: {
+                    email,
+                  },
+                  data: {
+                    emailVerified: true,
+                  },
+                });
+              }
+    
+              if (user && !user.emailVerified) {
+                await sendEmail({
+                  to: user.email,
+                  subject: "Verify your email address",
+                  templateName: "otp",
+                  templateData: {
+                    name: user.name,
+                    otp,
+                  },
+                });
+              }
+            } else if (type === "forget-password") {
+              const user = await prisma.user.findUnique({
+                where: {
+                  email,
+                },
+              });
+    
+              if (user) {
+                await sendEmail({
+                  to: email,
+                  subject: "Password Reset OTP",
+                  templateName: "otp",
+                  templateData: {
+                    name: user.name,
+                    otp,
+                  },
+                });
+              }
+            }
+          },
+          expiresIn: 10 * 60,
+          otpLength: 6,
+          resendStrategy: "rotate",
+        }),
+      ],
         
-    ],
     emailVerification:{
         autoSignInAfterVerification:true,
         sendOnSignUp:true,

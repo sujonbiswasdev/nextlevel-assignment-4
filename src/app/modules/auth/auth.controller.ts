@@ -25,13 +25,7 @@ const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
 
 const signoutUser = catchAsync(async (req: Request, res: Response) => {
   const betterAuthSessionToken = req.cookies["better-auth.session_token"];
-  const user = req.user;
-  if (!user) {
-    return res
-      .status(401)
-      .json({ success: false, message: "you are unauthorized" });
-  }
-  const result = await authService.signoutUser(user.id, betterAuthSessionToken);
+  const result = await authService.signoutUser(betterAuthSessionToken);
   CookieUtils.clearCookie(res, "accessToken", {
     httpOnly: true,
     secure: true,
@@ -58,10 +52,8 @@ const signoutUser = catchAsync(async (req: Request, res: Response) => {
 
 const signup = catchAsync(async (req: Request, res: Response) => {
   const payload = {
-    ...req.body,
-    image:req.file?.path || req.body.image
+    ...req.body
 };
-console.log(payload,'payload')
   const result = await authService.signup(payload);
   if (!result) {
     return res.status(400).json({ success: false, message: "Signup failed" });
@@ -127,10 +119,22 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendOtp = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  await authService.sendOtp(email);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "OTP sent to email successfully",
+  });
+});
+
 export const authController = {
   getCurrentUser,
   signoutUser,
   signup,
   signin,
-  getNewToken,verifyEmail
+  getNewToken,verifyEmail,
+  sendOtp
 };
