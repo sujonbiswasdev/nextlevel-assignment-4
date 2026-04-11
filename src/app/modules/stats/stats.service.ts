@@ -1,449 +1,367 @@
-import { prisma } from "../../lib/prisma"
+import status from "http-status";
+import AppError from "../../errorHelper/AppError";
+import { prisma } from "../../lib/prisma";
+import { IRequestUser } from "../../interface/requestUser.interface";
 
-const getuserStats = async (adminid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
+/**
+ * 🔹 Main Entry Function (Role Based)
+ */
+const getDashboardStatsData = async (user: IRequestUser) => {
+  const existuser=await prisma.user.findUnique({
+    where:{
+        email:user.email
     }
-
-    return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-
-        const [totalUsers, totalSuspendUser, totalActivateUser, totalAdmin, totalCustomer, totalprovider, todaystats, oneMonthago, totalemailvarified, totalactiveusers, totalunactiveuser] =
-            await Promise.all([
-                await tx.user.count(),
-                await tx.user.count({ where: { status: 'suspend' } }),
-                await tx.user.count({ where: { status: 'activate' } }),
-                await tx.user.count({ where: { role: 'Admin' } }),
-                await tx.user.count({ where: { role: 'Customer' } }),
-                await tx.user.count({ where: { role: 'Provider' } }),
-                await tx.user.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
-                await tx.user.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-                await tx.user.count({ where: { emailVerified: false } }),
-                await tx.user.count({ where: { isActive: true } }),
-                await tx.user.count({ where: { isActive: false } })
-
-            ])
-        return {
-            totalUsers,
-            totalSuspendUser,
-            totalActivateUser,
-            totalAdmin,
-            totalCustomer,
-            totalprovider,
-            todaystats,
-            oneMonthago,
-            totalemailvarified,
-            totalactiveusers,
-            totalunactiveuser
-
-        }
-    })
-}
-
-
-const getmealsStats = async (adminid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
-    }
-
-    return await prisma.$transaction(async (tx:any) => {
-        const [totalmeals, totalavailabemeals, totalunavailabemeals,totalapprovedmeals,totalpendingmeals,totalrejectedmeals] =
-            await Promise.all([
-                await tx.meal.count(),
-                await tx.meal.count({ where: { isAvailable: true } }),
-                await tx.meal.count({ where: { isAvailable: false } }),
-                await tx.meal.count({ where: { status: 'APPROVED' } }),
-                await tx.meal.count({ where: { status: 'PENDING' } }),
-                await tx.meal.count({ where: { status: 'REJECTED' } }),
-            ])
-        return {
-            totalmeals,
-            totalavailabemeals,
-            totalunavailabemeals,
-            totalapprovedmeals,
-            totalpendingmeals,
-            totalrejectedmeals
-        }
-    })
-}
-
-const getordersStats = async (adminid: string) => {
-    
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
-    }
-
-    return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-        const [totalorders, oneMonth, totalcancelledmeals, totalplacedmeals, totalpreparingmeals, totalreadymeals, totaldeliveredmeals, allearn, totalquantity, todayorders] =
-            await Promise.all([
-                await tx.order.count(),
-                await tx.order.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-                await tx.order.count({ where: { status: 'CANCELLED' } }),
-                await tx.order.count({ where: { status: 'PLACED' } }),
-                await tx.order.count({ where: { status: 'PREPARING' } }),
-                await tx.order.count({ where: { status: 'READY' } }),
-                await tx.order.count({ where: { status: 'DELIVERED' } }),
-                await tx.order.aggregate({ _sum: { totalPrice: true } }),
-                await tx.orderitem.aggregate({ _sum: { quantity: true } }),
-                await tx.order.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
-            ])
-        return {
-            totalorders,
-            oneMonth,
-            totalcancelledmeals,
-            totalplacedmeals,
-            totalpreparingmeals,
-            totalreadymeals,
-            totaldeliveredmeals,
-            allearn,
-            totalquantity,
-            todayorders
-
-        }
-    })
-}
-
-
-const getrevenueStats = async (adminid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
-    }
-
-    return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-
-
-        const [totalrevenue, todaysRevenue, monthlyRevenue, avgrevenue, topProvidersrevenue] =
-            await Promise.all([
-                await tx.order.aggregate({ _sum: { totalPrice: true } }),
-                await tx.order.aggregate({ _sum: { totalPrice: true }, where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
-                await tx.order.aggregate({ _sum: { totalPrice: true }, where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-                await tx.order.aggregate({ _avg: { totalPrice: true } }),
-                await tx.order.groupBy({ by: ['providerId'], orderBy: { _sum: { totalPrice: 'desc' } }, take: 5 })
-            ])
-        return {
-            totalrevenue,
-            todaysRevenue,
-            monthlyRevenue,
-            avgrevenue,
-            topProvidersrevenue
-        }
-    })
-}
-
-const getreviewStats = async (adminid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
-    }
-
-    return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-
-
-        const [totalreviews, todayreviews, topRatedMeals] =
-            await Promise.all([
-                await tx.review.count(),
-                await tx.review.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
-                await tx.review.groupBy({ by: ['mealId'], _avg: { rating: true }, orderBy: { _avg: { rating: "desc" } }, take: 4 })
-            ])
-        return {
-            totalreviews,
-            todayreviews,
-            topRatedMeals
-        }
-    })
-}
-
-
-
-const getcategoryStats = async (adminid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: adminid
-        }
-    })
-
-    if (existuser.id !== adminid) {
-        throw new Error("you are unauthorize")
-    }
-    return await prisma.$transaction(async (tx:any) => {
-        const [totalcategory,totalcategory_name, mealsPerCategory] =
-            await Promise.all([
-                await tx.category.count(),
-                await tx.category.findMany({select:{name:true}}),
-                await tx.meal.groupBy({
-                    by: ['category_name'], _count: {
-                        _all: true
-                    }
-                })
-            ])
-        return {
-            totalcategory,
-            totalcategory_name,
-            mealsPerCategory
-        }
-    })
-}
-
-
-// provider
-const getrevenueProviderStats = async (userid: string) => {
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: userid
-        },
-        include:{
-            provider:{
-                select:{
-                    id:true
-                }
-            }
-        }
-    })
-    console.log(userid)
-    if (existuser.id !== userid) {
-        throw new Error("you are unauthorize")
-    }
-     return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-
-
-        const [totalrevenue, todaysRevenue, monthlyRevenue, avgrevenue, topProvidersrevenue] =
-            await Promise.all([
-                await tx.order.aggregate({where:{providerId:existuser.provider!.id}, _sum: { totalPrice: true } }),
-                await tx.order.aggregate({ _sum: { totalPrice: true }, where: {providerId:existuser.provider!.id, createdAt: { gte: startOfToday, lte: endOfToday } } }),
-                await tx.order.aggregate({ _sum: { totalPrice: true }, where: {providerId:existuser.provider!.id, createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-                await tx.order.aggregate({where:{providerId:existuser.provider!.id}, _avg: { totalPrice: true } }),
-                await tx.order.groupBy({where:{providerId:existuser.provider!.id}, by: ['providerId'], orderBy: { _sum: { totalPrice: 'desc' } }, take: 5 })
-            ])
-        return {
-            totalrevenue,
-            todaysRevenue,
-            monthlyRevenue,
-            avgrevenue,
-            topProvidersrevenue
-        }
-    })
-}
-
-const getProvidermealsStats = async (userid: string) => {
-    console.log('get melass')
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: userid
-        },
-        include:{
-            provider:{
-                select:{
-                    id:true
-                }
-            }
-        }
-    })
-    if (existuser.id !== userid) {
-        throw new Error("you are unauthorize")
-    }
-
-    return await prisma.$transaction(async (tx:any) => {
-        const [totalmeals, totalavailabemeals, totalunavailabemeals] =
-            await Promise.all([
-                await tx.meal.count({where:{providerId:existuser.provider!.id}}),
-                await tx.meal.count({ where: {providerId:existuser.provider!.id, isAvailable: true } }),
-                await tx.meal.count({ where: {providerId:existuser.provider!.id, isAvailable: false } }),
-                // await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'APPROVED' } }),
-                // await tx.meal.count({ where: { providerId:existuser.provider!.id,status: 'PENDING' } }),
-                // await tx.meal.count({ where: {providerId:existuser.provider!.id, status: 'REJECTED' } }),
-            ])
-        return {
-            totalmeals,
-            totalavailabemeals,
-            totalunavailabemeals,
-            // totalapprovedmeals,
-            // totalpendingmeals,
-            // totalrejectedmeals
-        }
-    })
-}
-
-const getProviderordersStats = async (userid: string) => {
-    const todayOrdersData = await prisma.order.findMany({
-  where: {
-    createdAt: {
-      gte: new Date(new Date().setHours(0,0,0,0)),
-      lte: new Date(new Date().setHours(23,59,59,999))
-    }
+  })
+  if (!existuser) {
+    throw new AppError(status.UNAUTHORIZED, "User does not exist or is unauthorized");
   }
-})
+  let statsData;
 
-console.log("TODAY DATA:", todayOrdersData)
-console.log("TODAY LENGTH:", todayOrdersData.length)
-    const existuser = await prisma.user.findUniqueOrThrow({
-        where: {
-            id: userid
-        },
-        include:{
-            provider:{
-                select:{
-                    id:true
-                }
-            }
-        }
-    })
-    if (existuser.id !== userid) {
-        throw new Error("you are unauthorize")
-    }
+  switch (user.role) {
+    case "Admin":
+      statsData = getAdminStats(existuser.id);
+      break;
 
-    return await prisma.$transaction(async (tx:any) => {
-        // today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
+    case "Provider":
+      statsData = getProviderStats(existuser.id);
+      break;
 
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        // month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+    default:
+      throw new AppError(status.BAD_REQUEST, "Invalid user role");
+  }
 
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-        endOfMonth.setDate(0);
-        endOfMonth.setHours(23, 59, 59, 999);
-        const [totalorders, oneMonth, totalcancelledmeals, totalplacedmeals, totalpreparingmeals, totalreadymeals, totaldeliveredmeals, allearn, totalquantity, todayorders] =
-            await Promise.all([
-                await tx.order.count({where:{providerId:existuser.provider!.id}}),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'CANCELLED' } }),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'PLACED' } }),
-                await tx.order.count({ where: { providerId:existuser.provider!.id,status: 'PREPARING' } }),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'READY' } }),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, status: 'DELIVERED' } }),
-                await tx.order.aggregate({where:{providerId:existuser.provider!.id}, _sum: { totalPrice: true } }),
-                await tx.orderitem.aggregate({where:{order:{
-                    providerId:existuser.provider!.id
-                }},_sum: { quantity: true } }),
-                await tx.order.count({ where: {providerId:existuser.provider!.id, createdAt: { gte: startOfToday, lte: endOfToday } } }),
-            ])
-        return {
-            totalorders,
-            oneMonth,
-            totalcancelledmeals,
-            totalplacedmeals,
-            totalpreparingmeals,
-            totalreadymeals,
-            totaldeliveredmeals,
-            allearn,
-            totalquantity,
-            todayorders
+  return statsData;
+};
 
-        }
-    })
-}
+/**
+ * 🔹 ADMIN STATS
+ */
+const getAdminStats = async (adminId: string) => {
+  const existuser = await prisma.user.findUniqueOrThrow({
+    where: { id: adminId },
+  });
 
+  if (existuser.id !== adminId) {
+    throw new Error("you are unauthorize");
+  }
+
+  return {
+    userStats: await getUserStatsInternal(),
+    mealStats: await getMealStatsInternal(),
+    orderStats: await getOrderStatsInternal(),
+    revenueStats: await getRevenueStatsInternal(),
+    reviewStats: await getReviewStatsInternal(),
+    categoryStats: await getCategoryStatsInternal(),
+  };
+};
+
+/**
+ * 🔹 PROVIDER STATS
+ */
+const getProviderStats = async (userId: string) => {
+  const existuser = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    include: {
+      provider: { select: { id: true } },
+    },
+  });
+
+  if (existuser.id !== userId) {
+    throw new Error("you are unauthorize");
+  }
+
+  return {
+    revenueStats: await getProviderRevenueInternal(existuser.provider!.id),
+    mealStats: await getProviderMealInternal(existuser.provider!.id),
+    orderStats: await getProviderOrderInternal(existuser.provider!.id),
+  };
+};
+
+
+
+const getUserStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    const [
+      totalUsers,
+      totalSuspendUser,
+      totalActivateUser,
+      totalAdmin,
+      totalCustomer,
+      totalprovider,
+      todaystats,
+      oneMonthago,
+      totalemailvarified,
+      totalactiveusers,
+      totalunactiveuser,
+    ] = await Promise.all([
+      tx.user.count(),
+      tx.user.count({ where: { status: "suspend" } }),
+      tx.user.count({ where: { status: "activate" } }),
+      tx.user.count({ where: { role: "Admin" } }),
+      tx.user.count({ where: { role: "Customer" } }),
+      tx.user.count({ where: { role: "Provider" } }),
+      tx.user.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
+      tx.user.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
+      tx.user.count({ where: { emailVerified: false } }),
+      tx.user.count({ where: { isActive: true } }),
+      tx.user.count({ where: { isActive: false } }),
+    ]);
+
+    return {
+      totalUsers,
+      totalSuspendUser,
+      totalActivateUser,
+      totalAdmin,
+      totalCustomer,
+      totalprovider,
+      todaystats,
+      oneMonthago,
+      totalemailvarified,
+      totalactiveusers,
+      totalunactiveuser,
+    };
+  });
+};
+
+const getMealStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const [
+      totalmeals,
+      totalavailabemeals,
+      totalunavailabemeals,
+      totalapprovedmeals,
+      totalpendingmeals,
+      totalrejectedmeals,
+    ] = await Promise.all([
+      tx.meal.count(),
+      tx.meal.count({ where: { isAvailable: true } }),
+      tx.meal.count({ where: { isAvailable: false } }),
+      tx.meal.count({ where: { status: "APPROVED" } }),
+      tx.meal.count({ where: { status: "PENDING" } }),
+      tx.meal.count({ where: { status: "REJECTED" } }),
+    ]);
+
+    return {
+      totalmeals,
+      totalavailabemeals,
+      totalunavailabemeals,
+      totalapprovedmeals,
+      totalpendingmeals,
+      totalrejectedmeals,
+    };
+  });
+};
+
+const getOrderStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    const [
+      totalorders,
+      oneMonth,
+      totalcancelledmeals,
+      totalplacedmeals,
+      totalpreparingmeals,
+      totalreadymeals,
+      totaldeliveredmeals,
+      allearn,
+      totalquantity,
+      todayorders,
+    ] = await Promise.all([
+      tx.order.count(),
+      tx.order.count({ where: { createdAt: { gte: startOfMonth, lte: endOfMonth } } }),
+      tx.order.count({ where: { status: "CANCELLED" } }),
+      tx.order.count({ where: { status: "PLACED" } }),
+      tx.order.count({ where: { status: "PREPARING" } }),
+      tx.order.count({ where: { status: "READY" } }),
+      tx.order.count({ where: { status: "DELIVERED" } }),
+      tx.order.aggregate({ _sum: { totalPrice: true } }),
+      tx.orderitem.aggregate({ _sum: { quantity: true } }),
+      tx.order.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
+    ]);
+
+    return {
+      totalorders,
+      oneMonth,
+      totalcancelledmeals,
+      totalplacedmeals,
+      totalpreparingmeals,
+      totalreadymeals,
+      totaldeliveredmeals,
+      allearn,
+      totalquantity,
+      todayorders,
+    };
+  });
+};
+
+const getRevenueStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    const [totalrevenue, todaysRevenue, monthlyRevenue, avgrevenue, topProvidersrevenue] =
+      await Promise.all([
+        tx.order.aggregate({ _sum: { totalPrice: true } }),
+        tx.order.aggregate({
+          _sum: { totalPrice: true },
+          where: { createdAt: { gte: startOfToday, lte: endOfToday } },
+        }),
+        tx.order.aggregate({
+          _sum: { totalPrice: true },
+          where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+        }),
+        tx.order.aggregate({ _avg: { totalPrice: true } }),
+        tx.order.groupBy({
+          by: ["providerId"],
+          orderBy: { _sum: { totalPrice: "desc" } },
+          take: 5,
+        }),
+      ]);
+
+    return {
+      totalrevenue,
+      todaysRevenue,
+      monthlyRevenue,
+      avgrevenue,
+      topProvidersrevenue,
+    };
+  });
+};
+
+const getReviewStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const [totalreviews, todayreviews, topRatedMeals] = await Promise.all([
+      tx.review.count(),
+      tx.review.count({ where: { createdAt: { gte: startOfToday, lte: endOfToday } } }),
+      tx.review.groupBy({
+        by: ["mealId"],
+        _avg: { rating: true },
+        orderBy: { _avg: { rating: "desc" } },
+        take: 4,
+      }),
+    ]);
+
+    return {
+      totalreviews,
+      todayreviews,
+      topRatedMeals,
+    };
+  });
+};
+
+const getCategoryStatsInternal = async () => {
+  return prisma.$transaction(async (tx: any) => {
+    const [totalcategory, totalcategory_name, mealsPerCategory] = await Promise.all([
+      tx.category.count(),
+      tx.category.findMany({ select: { name: true } }),
+      tx.meal.groupBy({
+        by: ["category_name"],
+        _count: { _all: true },
+      }),
+    ]);
+
+    return {
+      totalcategory,
+      totalcategory_name,
+      mealsPerCategory,
+    };
+  });
+};
+
+/**
+ * 🔹 PROVIDER INTERNAL
+ */
+
+const getProviderRevenueInternal = async (providerId: string) => {
+  return prisma.$transaction(async (tx: any) => {
+    const [totalrevenue] = await Promise.all([
+      tx.order.aggregate({
+        where: { providerId },
+        _sum: { totalPrice: true },
+      }),
+    ]);
+
+    return { totalrevenue };
+  });
+};
+
+const getProviderMealInternal = async (providerId: string) => {
+  return prisma.$transaction(async (tx: any) => {
+    const [totalmeals, totalavailabemeals, totalunavailabemeals] =
+      await Promise.all([
+        tx.meal.count({ where: { providerId } }),
+        tx.meal.count({ where: { providerId, isAvailable: true } }),
+        tx.meal.count({ where: { providerId, isAvailable: false } }),
+      ]);
+
+    return {
+      totalmeals,
+      totalavailabemeals,
+      totalunavailabemeals,
+    };
+  });
+};
+
+const getProviderOrderInternal = async (providerId: string) => {
+  return prisma.$transaction(async (tx: any) => {
+    const [totalorders] = await Promise.all([
+      tx.order.count({ where: { providerId } }),
+    ]);
+
+    return { totalorders };
+  });
+};
+
+/**
+ * 🔹 EXPORT
+ */
 export const StatsService = {
-    getuserStats,
-    getmealsStats,
-    getordersStats,
-    getrevenueStats,
-    getreviewStats,
-    getcategoryStats,
-    getrevenueProviderStats,
-    getProvidermealsStats,
-    getProviderordersStats
-}
+  getDashboardStatsData,
+};

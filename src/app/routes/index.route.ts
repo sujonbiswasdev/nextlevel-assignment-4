@@ -5,8 +5,8 @@ import { OrderRouter } from "../modules/order/order.route";
 import { CategoryRouter } from "../modules/category/category.route";
 import { UserRouter } from "../modules/user/user.route";
 import { ReviewsRouter } from "../modules/reviews/reviews.route";
-import { StatsRouter } from "../modules/stats/stats.route";
 import { authRouter } from "../modules/auth/auth.route";
+import { StatsRoutes } from "../modules/stats/stats.route";
 
 const router = Router()
 
@@ -30,7 +30,7 @@ router.use("/v1",UserRouter.router)
 router.use('/v1',ReviewsRouter.router)
 
 //stats
-router.use('/v1',StatsRouter.router)
+router.use('/v1',StatsRoutes)
 // auth
 router.use("/v1/auth",authRouter.router)
 
