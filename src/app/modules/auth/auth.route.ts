@@ -14,6 +14,8 @@ router.post('/login',authController.signin)
 router.post("/refresh-token", authController.getNewToken)
 router.post("/verify-email", authController.verifyEmail)
 router.post("/send-otp", authController.sendOtp)
+router.post("/forget-password", authController.forgetPassword)
+router.post("/reset-password", authController.resetPassword)
 
 
 export const authRouter={router}

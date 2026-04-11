@@ -246,6 +246,66 @@ const sendOtp = async (email: string) => {
 
   return result;
 };
+
+const forgetPassword = async (email: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!isUserExist) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+  if (isUserExist.status=='suspend') {
+    throw new AppError(status.NOT_FOUND, "your account is suspend");
+  }
+
+  await auth.api.requestPasswordResetEmailOTP({
+    body: {
+      email,
+    },
+  });
+};
+
+
+const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+) => {
+  console.log(email,otp,newPassword,'passwrd')
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!isUserExist) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+
+
+  if (isUserExist.status=='suspend') {
+    throw new AppError(status.NOT_FOUND, "your account is suspend");
+  }
+
+  await auth.api.resetPasswordEmailOTP({
+    body: {
+      email,
+      otp,
+      password: newPassword,
+    },
+  });
+  await prisma.session.deleteMany({
+    where: {
+      userId: isUserExist.id,
+    },
+  });
+};
+
+
+
 export const authService = {
   getCurrentUser,
   signoutUser,
@@ -253,5 +313,7 @@ export const authService = {
   signin,
   getNewToken,
   verifyEmail,
-  sendOtp
+  sendOtp,
+  forgetPassword,
+  resetPassword
 };
