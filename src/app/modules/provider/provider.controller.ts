@@ -3,6 +3,7 @@ import { providerService } from "./provider.service"
 import { sendResponse } from "../../shared/sendResponse"
 import status from "http-status"
 import { catchAsync } from "../../shared/catchAsync"
+import paginationSortingHelper from "../../helpers/paginationHelping"
 
 const createProvider = catchAsync(async (req: Request, res: Response) => {
             const user = req.user
@@ -20,7 +21,18 @@ const createProvider = catchAsync(async (req: Request, res: Response) => {
 )
 
 const gelAllprovider=catchAsync(async(req:Request,res:Response)=>{
-    const result =await providerService.getAllProvider()
+
+    const {search}=req.query;
+
+    const isActive = req.query.isAvailable
+               ? req.query.isActive === 'true'
+                   ? true
+                   : req.query.isActive == 'false'
+                       ? false
+                       : undefined :
+               undefined
+               const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
+    const result =await providerService.getAllProvider(req.query as any, isActive as boolean, page, limit, skip, sortBy, sortOrder,search as string)
     sendResponse(res,{
         httpStatusCode:status.OK,
         success:true,

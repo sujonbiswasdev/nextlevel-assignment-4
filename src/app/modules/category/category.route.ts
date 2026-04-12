@@ -8,7 +8,7 @@ import { createcategoryData, UpdatecategoryData } from "./category.validation";
 const router=Router()
 
 router.post("/admin/category",auth([UserRoles.Admin]),validateRequest(createcategoryData),CategoryController.CreateCategory)
-router.get("/category",CategoryController.getCategory)
+router.get("/categorys",CategoryController.getCategory)
 router.get("/category/:id",CategoryController.SingleCategory)
 router.put("/admin/category/:id",auth([UserRoles.Admin]),validateRequest(UpdatecategoryData),CategoryController.UpdateCategory)
 router.delete("/admin/category/:id",auth([UserRoles.Admin]),CategoryController.DeleteCategory)

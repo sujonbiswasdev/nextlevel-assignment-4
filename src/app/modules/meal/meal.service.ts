@@ -57,13 +57,13 @@ const getAllmeals = async (
       orConditions.push(
         {
           meals_name: {
-            contains: data.search,
+            contains: search,
             mode: "insensitive",
           },
         },
         {
           description: {
-            contains: data.search,
+            contains: search,
             mode: "insensitive",
           },
         },

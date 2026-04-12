@@ -6,6 +6,7 @@ import { CreateproviderData, UpdateproviderData } from "./provider.validation";
 import { ICreateproviderData } from "./provider.interface";
 import AppError from "../../errorHelper/AppError";
 import status from "http-status";
+import { MealWhereInput, ProviderProfileWhereInput } from "../../../../generated/prisma/models";
 
 const createProvider = async (data: ICreateproviderData, userId: string) => {
   const existinguser = await prisma.user.findUnique({ where: { id: userId } });
@@ -24,8 +25,62 @@ const createProvider = async (data: ICreateproviderData, userId: string) => {
   return result;
 };
 
-const getAllProvider = async () => {
+const getAllProvider = async ( 
+  query?: Record<string, any>,
+  isActive?:any,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  sortBy?: string | undefined,
+  sortOrder?: string | undefined,
+  search?:string | undefined
+ ) => {
+  console.log(search,'queary data')
+
+
+  const andConditions: ProviderProfileWhereInput[] = [];
+
+  if (search || query) {
+    const orConditions: any[] = [];
+      orConditions.push({
+        restaurantName: {
+          contains: search,
+          mode: "insensitive",
+        },
+      });
+
+        orConditions.push({
+          address: {
+            contains: search,
+            mode: "insensitive",
+          },
+        });
+
+        orConditions.push({
+          description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        });
+
+      if (orConditions.length > 0) {
+        andConditions.push({ OR: orConditions });
+      }
+  }
   const providers = await prisma.providerProfile.findMany({
+    where: {
+      AND: andConditions,
+      user:{
+        name:{
+          contains: search,
+          mode: "insensitive",
+        },
+        isActive:isActive,
+        email:query?.email
+      }
+    },
+    take: limit,
+    skip,
     include: {
       user: true,
       meals:{
@@ -38,57 +93,26 @@ const getAllProvider = async () => {
       createdAt: "desc",
     },
   });
-  let i: number = 0;
-  const userid = providers.map((p) => p.userId);
-  console.log(userid.length, "userid");
-  for (i = 0; i < userid.length; i++) {
-    console.log(userid.length, "leng");
-    console.log(i, "idss");
-    const ratings = await prisma.review.aggregate({
-      where: {
-        rating: {
-          gt: 0,
-        },
-        parentId: null,
-        meal: {
-          provider: {
-            userId: userid[i],
-          },
-        },
-      },
-      _avg: {
-        rating: true,
-      },
-      _count: {
-        rating: true,
-      },
-    });
-    console.log(i, "id");
-    console.log(userid[i], "ratingdata");
 
-    const providerWithRating = providers.map((provider) => {
-      // const providerMeals = ratings._avg.rating;
 
-      const totalReview = ratings._count.rating;
+  const result = providers.map((provider) => {
+    const allReviews = provider.meals.flatMap((meal) => meal.reviews);
+  
+    const totalReviews = allReviews.length;
+  
+    const avgRating =
+      totalReviews > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
+  
+    return {
+      ...provider,
+      totalReviews,
+      avgRating,
+    };
+  });
 
-      // const totalRating = providerMeals.reduce(
-      //   (sum, r) => sum + (r._avg.rating ?? 0) * r._count.rating,
-      //   0,
-      // );
-
-      const averageRating = ratings._avg.rating;
-
-      return {
-        ...provider,
-        rating: {
-          totalReview,
-          averageRating,
-        },
-      };
-    });
-
-    return providerWithRating;
-  }
+  return result
 };
 
 const getProviderWithMeals = async (id: string) => {
@@ -166,7 +190,12 @@ const getTopProviders = async () => {
       },
       meals: {
         include: {
-          reviews: true,
+          reviews: {
+            where:{
+              parentId:null,
+              status:"APPROVED"
+            }
+          },
         },
       },
     },
@@ -177,13 +206,16 @@ const getTopProviders = async () => {
       let totalRating = 0;
       let totalReviews = 0;
       provider.meals.forEach((meal) => {
-        meal.reviews.forEach((review) => {
-          if (typeof review.rating === "number") {
-            totalRating += review.rating;
-            totalReviews++;
-          }
-        });
+        meal.reviews
+          .filter((review) => review.parentId == null)
+          .forEach((review) => {
+            if (typeof review.rating === "number") {
+              totalRating += review.rating;
+              totalReviews++;
+            }
+          });
       });
+ 
 
       const averageRating =
         totalReviews > 0

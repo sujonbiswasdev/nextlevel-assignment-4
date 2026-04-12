@@ -65,6 +65,38 @@ const SingleCategory = async (id: string) => {
       user: true,
     },
   });
+  if (result && Array.isArray(result.meals)) {
+    result.meals = result.meals.map(meal => {
+      let totalRating = 0;
+      let totalReviews = 0;
+
+      if (Array.isArray(meal.reviews)) {
+  
+        meal.reviews = meal.reviews.filter(
+          review =>
+            (review.status === "APPROVED" && review.parentId === null) ||
+            typeof review.status === "undefined"
+        );
+        meal.reviews.forEach(review => {
+          if (
+            (review.status === "APPROVED" || typeof review.status === "undefined") &&
+            typeof review.rating === "number"
+          ) {
+            totalRating += review.rating;
+            totalReviews++;
+          }
+        });
+      }
+
+      const avgRating = totalReviews > 0 ? Number((totalRating / totalReviews).toFixed(1)) : 0;
+
+      return {
+        ...meal,
+        avgRating,
+        totalReviews,
+      };
+    });
+  }
   return result;
 };
 
