@@ -11,6 +11,7 @@ import {
 } from "./meal.interface";
 import AppError from "../../errorHelper/AppError";
 import status from "http-status";
+import { parseDateForPrisma } from '../../utils/parseDate';
 
 const createMeal = async (data: ICreateMealsData, email: string) => {
   const providerid = await prisma.user.findUnique({
@@ -285,12 +286,116 @@ const DeleteMeals = async (mealid: string) => {
   return result;
 };
 
-const getOwnMeals = async (userid: string) => {
+const getOwnMeals = async (
+  email?:string,
+  data?: Record<string, any>,
+  isAvailable?: boolean,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  sortBy?: string | undefined,
+  sortOrder?: string | undefined,
+  search?:string | undefined) => {
+  data = data && typeof data === 'object' ? data : {};
+  let userid;
+  if (email) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new AppError(status.NOT_FOUND, "User not found");
+    }
+    userid = user.id;
+  }
+
+
+
+  const andConditions: MealWhereInput[] | MealWhereInput = [];
+  if (data) {
+    const orConditions: any[] = [];
+
+    if (search) {
+      orConditions.push(
+        {
+          meals_name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      );
+    }
+
+    if (data.cuisine) {
+      orConditions.push({
+        cuisine: {
+          equals: data.cuisine,
+        },
+      });
+    }
+    if (data.category_name) {
+      orConditions.push({
+        category_name: {
+          contains: data.category_name,
+          mode: "insensitive",
+        },
+      });
+    }
+    
+    if (data.createdAt) {
+      const dateRange = parseDateForPrisma(data.createdAt);
+      andConditions.push({ createdAt: dateRange.gte });
+    }
+
+    if (orConditions.length > 0) {
+      andConditions.push({ OR: orConditions });
+    }
+  }
+  if (typeof isAvailable === "boolean") {
+    andConditions.push({ isAvailable: isAvailable });
+  }
+
+  
+
+  if (data.status) {
+    andConditions.push({
+      status: {
+        equals: data.status,
+      },
+    });
+  }
+
+  if (data.price) {
+    andConditions.push({
+      price: {
+        gte: 0,
+        lte: Number(data.price),
+      },
+    });
+  }
+  if (data.dietaryPreference?.length) {
+    const dietaryList = data.dietaryPreference.split(
+      ",",
+    ) as DietaryPreference[];
+    andConditions.push({
+      OR: dietaryList.map((item) => ({ dietaryPreference: item })),
+    });
+  }
+
+
   const meals = await prisma.meal.findMany({
+    take: limit,
+      skip,
     where: {
       provider: {
         userId: userid,
       },
+      AND:andConditions
     },
     include: {
       category: true,
@@ -310,7 +415,7 @@ const getOwnMeals = async (userid: string) => {
     },
   });
   const mealIds = meals.map((meal) => meal.id);
-  const reviewStats = await prisma.review.groupBy({
+  const reviewData = await prisma.review.groupBy({
     by: ["mealId"],
     where: {
       mealId: { in: mealIds },
@@ -325,16 +430,31 @@ const getOwnMeals = async (userid: string) => {
       rating: true,
     },
   });
-  const mealsWithStats = meals.map((meal) => {
-    const stats = reviewStats.find((s) => s.mealId === meal.id);
+  const mealsData = meals.map((meal) => {
+    const stats = reviewData.find((s) => s.mealId === meal.id);
     return {
       ...meal,
-      averageRating: stats?._avg?.rating || 0, // Default to 0
-      totalReview: stats?._count?.rating || 0, // Default to 0
+      avgRating: stats?._avg?.rating || 0, // Default to 0
+      totalReviews: stats?._count?.rating || 0, // Default to 0
     };
   });
+  const total=await prisma.meal.count({where:{
+    AND:andConditions,
+    provider: {
+      userId: userid,
+    },
+  }})
 
-  return mealsWithStats;
+  
+  return {mealsData,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalpage: Math.ceil(total / (limit || 1)),
+    },
+    
+  };
 };
 
 const updateStatus = async (data: any, mealid: string) => {

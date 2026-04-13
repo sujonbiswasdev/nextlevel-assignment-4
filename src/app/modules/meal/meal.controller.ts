@@ -106,7 +106,20 @@ const getownmeals = catchAsync(async (req:Request,res:Response)=>{
     if(!user){
         return res.status(status.UNAUTHORIZED).json({success:false,message:"you are unauthorized"})
     }
-    const result =await mealService.getOwnMeals(user.id)
+
+    const {search}=req.query;
+
+    console.log(req.query,'dd')
+    const isAvailable = req.query.isAvailable
+               ? req.query.isAvailable === 'true'
+                   ? true
+                   : req.query.isAvailable == 'false'
+                       ? false
+                       : undefined :
+               undefined
+   
+           const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
+    const result =await mealService.getOwnMeals(user.email,req.query as any, isAvailable as boolean, page, limit, skip, sortBy, sortOrder,search as string)
         sendResponse(res,{
             httpStatusCode:status.OK,
             success:true,
