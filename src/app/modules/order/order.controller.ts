@@ -10,7 +10,7 @@ const createOrder = catchAsync(async (req: Request, res: Response) => {
     if (!user) {
         return res.status(status.UNAUTHORIZED).json({ success: false, message: "you are unauthorized" })
     }
-    const result = await ServiceOrder.CreateOrder(req.body, user.id as string)
+    const result = await ServiceOrder.CreateOrder(req.body, user.email as string)
     sendResponse(res,{
         httpStatusCode:status.CREATED,
         success:true,

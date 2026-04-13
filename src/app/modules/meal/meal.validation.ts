@@ -5,6 +5,7 @@ import z from "zod";
         description: z.string().optional(),
         image: z.string(),
         price: z.number(),
+        deliverycharge:z.number().optional(),
         isAvailable: z.boolean().optional(),
         dietaryPreference: z.enum([
             "HALAL",

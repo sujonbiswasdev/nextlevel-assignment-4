@@ -34,6 +34,7 @@ const createMeal = async (data: ICreateMealsData, email: string) => {
     data: {
       ...data,
       providerId: providerid!.provider!.id,
+      deliverycharge: data.deliverycharge !== undefined ? data.deliverycharge : 0,
     },
   });
 

@@ -33,6 +33,10 @@ interface EnvConfig {
     SMTP_PORT: string;
     SMTP_FROM: string;
   };
+  STRIPE: {
+    STRIPE_SECRET_KEY: string;
+    STRIPE_WEBHOOK_SECRET: string;
+  };
 
 }
 
@@ -62,6 +66,8 @@ const loadEnvVariables = (): EnvConfig => {
     "SMTP_HOST",
     "SMTP_PORT",
     "SMTP_FROM",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
   ];
   requireEnvVariable.forEach((variable) => {
     if (!process.env[variable]) {
@@ -100,6 +106,10 @@ const loadEnvVariables = (): EnvConfig => {
       SMTP_HOST: process.env.SMTP_HOST as string,
       SMTP_PORT: process.env.SMTP_PORT as string,
       SMTP_FROM: process.env.SMTP_FROM as string,
+    },
+    STRIPE: {
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string,
     },
       
   }

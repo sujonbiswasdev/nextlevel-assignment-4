@@ -8,6 +8,7 @@ model Meal {
   dietaryPreference DietaryPreference @default(HALAL)
   providerId        String
   category_name     String
+  deliverycharge    Int
   cuisine           Cuisine           @default(BANGLEDESHI)
   status            MealsStatus       @default(APPROVED)
   createdAt         DateTime          @default(now())
@@ -16,6 +17,7 @@ model Meal {
   provider          ProviderProfile   @relation(fields: [providerId], references: [id], onDelete: Cascade)
   orderitem         Orderitem[]
   reviews           Review[]
+  payment           Payment[]
 
   @@map("meal")
 }

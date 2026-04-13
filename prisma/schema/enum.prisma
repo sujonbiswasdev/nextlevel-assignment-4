@@ -1,0 +1,5 @@
+enum PaymentStatus {
+ PAID
+  UNPAID
+  FREE
+}

@@ -1,0 +1,19 @@
+model Payment {
+  id String @id @default(uuid())
+
+  userId        String
+  mealId       String
+  stripeEventId String? @unique
+  transactionId String? @unique @db.Uuid()
+  paymentGatewayData Json?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  meal Meal @relation(fields: [mealId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  amount        Float
+  status        PaymentStatus @default(UNPAID)
+  orderId String        @unique
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}

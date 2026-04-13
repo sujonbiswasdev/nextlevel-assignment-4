@@ -3,7 +3,7 @@ import { CreatemealData, mealQuerySchema, UpdatemealData } from "./meal.validati
 // create meals
 export type ICreateMealsData=z.infer<typeof CreatemealData>
 
-// update meal
+// update meals
 export type IUpdateMealsData = z.infer<typeof UpdatemealData>;
 
 // 2. Infer the TypeScript Type

@@ -6,8 +6,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import errorHandler from "./app/middleware/globalErrorHandeller";
 import { IndexRouter } from "./app/routes/index.route";
+import { PaymentController } from "./app/modules/payment/payment.controller";
 const app = express()
 // middleware
+app.post("/webhook", express.raw({ type: "application/json" }),PaymentController.handleStripeWebhookEvent);
 app.use(express.json());
 app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));

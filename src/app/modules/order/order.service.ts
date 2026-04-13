@@ -1,4 +1,4 @@
-import z from "zod";
+import { v6 as uuidv6 } from 'uuid';
 import { Order, Orderitem } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { formatZodIssues } from "../../utils/handleZodError";
@@ -8,83 +8,137 @@ import status from "http-status";
 import { ICreateorderData } from "./order.interface";
 import { OrderWhereInput } from "../../../../generated/prisma/models";
 import { parseDateForPrisma } from "../../utils/parseDate";
+import { envVars } from "../../config/env";
+import { stripe } from "../../config/stripe.config";
 
-const CreateOrder = async (payload: ICreateorderData, customerId: string) => {
-  const mealId = payload.items.find((i) => i.mealId);
-  const existingmeals = await prisma.meal.findMany({
+const CreateOrder = async (payload: ICreateorderData, email: string) => {
+  const exisUser=await prisma.user.findUnique({
+    where:{
+      email:email
+    }
+  })
+  const customerId=exisUser?.id
+  const mealItem = payload.items.find((i) => i.mealId);
+
+  if (!mealItem) {
+    throw new AppError(400, "MealId is required");
+  }
+
+  const existingMeal = await prisma.meal.findUnique({
     where: {
-      id: mealId?.mealId,
+      id: mealItem.mealId,
     },
   });
-  
-  const mealdata = existingmeals.find((meal) => meal.id == mealId?.mealId);
-  const orderexisting = await prisma.order.findMany({
-    where: {
-      customerId,
-      orderitem: {
-        some: {
-          mealId: mealId?.mealId,
-        },
-      },
-    },
-  });
-  const existingOrder = orderexisting.filter((item, index) =>item.status=='PLACED');
-  if (existingOrder.length > 0) {
 
+  if (!existingMeal) {
     throw new AppError(
-      409,
-      `There is already a placed order for the meal with id (${mealId?.mealId}). Please wait for the previous order to be completed, or remove the id and name.`
- 
+      status.NOT_FOUND,
+      `Meal with id (${mealItem.mealId}) does not exist.`
     );
   }
+
   try {
-    const result = await prisma.order.create({
-      data: {
-        customerId: customerId,
-        providerId: mealdata!.providerId,
-        address: payload.address,
-        phone: payload.phone,
-        first_name: payload.first_name,
-        last_name: payload.last_name,
-        orderitem: {
-          createMany: {
-            data: payload.items.map((item) => ({
-              mealId: item.mealId,
-              price: mealdata!.price,
-              quantity: item.quantity,
-            })),
-          },
-        },
-        totalPrice:
-          mealdata!.price! *
-            payload.items.reduce((acc, item) => acc + item.quantity, 0) || 0,
-      },
-      include: {
-        orderitem: {
-          include: {
-            meal: {
-              select: {
-                meals_name: true,
-                cuisine: true,
-                price: true,
-              },
+    const isFree = Number(existingMeal.deliverycharge) === 0;
+    const finalPayment = isFree ? "PAID" : "UNPAID";
+    const deliveryCharge = isFree ? 0 : existingMeal.deliverycharge;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // ✅ MUST use tx here
+      const orderData = await tx.order.create({
+        data: {
+          customerId: customerId as string, // ensure not undefined
+          providerId: existingMeal.providerId,
+          address: payload.address,
+          phone: payload.phone,
+          paymentStatus: finalPayment,
+          first_name: payload.first_name ?? null,
+          last_name: payload.last_name ?? null,
+          orderitem: {
+            createMany: {
+              data: payload.items.map((item) => ({
+                mealId: item.mealId,
+                price: existingMeal.price,
+                quantity: item.quantity,
+              })),
             },
           },
+          totalPrice:
+            existingMeal.price *
+            payload.items.reduce((acc, item) => acc + item.quantity, 0),
         },
-        provider: true,
-      },
+      });
+ 
+
+      // ✅ যদি free হয়, Stripe লাগবে না
+      if (isFree) {
+        return {
+          orderData,
+          paymentData: null,
+          paymentUrl: null,
+        };
+      }
+
+      const transactionId = String(uuidv6());
+
+      const paymentData = await tx.payment.create({
+        data: {
+          orderId: orderData.id,
+          amount: deliveryCharge,
+          transactionId,
+          mealId: existingMeal.id,
+          userId: customerId as string, // ensure string, not undefined
+        },
+      });
+ 
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "bdt",
+              product_data: {
+                name: `Meal: ${existingMeal.meals_name}`,
+              },
+              unit_amount: deliveryCharge * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          orderId: orderData.id,
+          paymentId: paymentData.id,
+        },
+        payment_intent_data: {
+          metadata: {
+            orderId: orderData.id,
+            paymentId: paymentData.id,
+          },
+        },
+
+        // ✅ FIXED URL
+        success_url: `${envVars.FRONTEND_URL}/payment-success?orderId=${orderData.id}&paymentId=${paymentData.id}`,
+        cancel_url: `${envVars.FRONTEND_URL}/payment-cancel?orderId=${orderData.id}&paymentId=${paymentData.id}`,
+      });
+
+      console.log("Stripe URL:", session.url); // 🔥 debug
+
+      return {
+        orderData,
+        paymentData,
+        paymentUrl: session.url,
+      };
     });
-    if (result.orderitem.length==0) {
-        await prisma.order.delete({
-            where:{
-                id:result.id
-            }
-        })
-        throw new AppError(400,'order created failed')
-    }
-    return result;
+
+    return {
+      order: result.orderData,
+      payment: result.paymentData,
+      paymentUrl: result.paymentUrl,
+    };
   } catch (error) {
-    throw new AppError(500,'something went wrong,please try again')
+    console.error(error);
+    throw new AppError(500, "Something went wrong, please try again");
   }
 };
 
