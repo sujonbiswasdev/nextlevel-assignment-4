@@ -5,7 +5,7 @@ import AppError from "../../errorHelper/AppError";
 import status from "http-status";
 import { jwtUtils } from "../../utils/jwt";
 import { JwtPayload } from "jsonwebtoken";
-import { ISignupData } from "./auth.interface";
+import { IChangePasswordPayload, ISignupData } from "./auth.interface";
 
 const getCurrentUser = async (email: string) => {
   const user = await prisma.user.findUnique({
@@ -306,6 +306,64 @@ const resetPassword = async (
 
 
 
+const changePassword = async (
+  payload: IChangePasswordPayload,
+  sessionToken: string,
+) => {
+  const session = await auth.api.getSession({
+    headers: new Headers({
+      Authorization: `Bearer ${sessionToken}`,
+    }),
+  });
+
+  if (!session) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid session token");
+  }
+
+  const { currentPassword, newPassword } = payload;
+
+  const result = await auth.api.changePassword({
+    body: {
+      currentPassword,
+      newPassword,
+      revokeOtherSessions: true,
+    },
+    headers: new Headers({
+      Authorization: `Bearer ${sessionToken}`,
+    }),
+  });
+  if(!result){
+    throw new AppError(400,'user change password failed')
+  }
+
+  const accessToken = tokenUtils.getAccessToken({
+    userId: session.user.id,
+    role: session.user.role,
+    name: session.user.name,
+    email: session.user.email,
+    status: session.user.status,
+    emailVerified: session.user.emailVerified,
+  });
+
+  const refreshToken = tokenUtils.getRefreshToken({
+    userId: session.user.id,
+    role: session.user.role,
+    name: session.user.name,
+    email: session.user.email,
+    status: session.user.status,
+    emailVerified: session.user.emailVerified,
+  });
+
+  return {
+    ...result,
+    accessToken,
+    refreshToken,
+  };
+};
+
+
+
+
 export const authService = {
   getCurrentUser,
   signoutUser,
@@ -315,5 +373,6 @@ export const authService = {
   verifyEmail,
   sendOtp,
   forgetPassword,
-  resetPassword
+  resetPassword,
+  changePassword
 };

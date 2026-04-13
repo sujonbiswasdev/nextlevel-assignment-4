@@ -151,6 +151,28 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
     message: "Password reset successfully",
   });
 });
+
+
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const betterAuthSessionToken = req.cookies["better-auth.session_token"];
+  const result = await authService.changePassword(
+    payload,
+    betterAuthSessionToken,
+  );
+
+  const { accessToken, refreshToken, token } = result;
+  tokenUtils.setAccessTokenCookie(res, accessToken);
+  tokenUtils.setRefreshTokenCookie(res, refreshToken);
+  tokenUtils.setBetterAuthSessionCookie(res, token as string);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Password changed successfully",
+    data: result,
+  });
+});
 export const authController = {
   getCurrentUser,
   signoutUser,
@@ -159,5 +181,6 @@ export const authController = {
   getNewToken,verifyEmail,
   sendOtp,
   forgetPassword,
-  resetPassword
+  resetPassword,
+  changePassword
 };

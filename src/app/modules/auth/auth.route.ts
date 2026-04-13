@@ -11,6 +11,7 @@ router.get('/me',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),a
 router.post('/logout',auth([UserRoles.Admin,UserRoles.Customer,UserRoles.Provider]),authController.signoutUser)
 router.post('/register',validateRequest(createUserSchema),authController.signup)
 router.post('/login',authController.signin)
+router.post("/change-password", auth([UserRoles.Admin,UserRoles.Provider,UserRoles.Customer]), authController.changePassword)
 router.post("/refresh-token", authController.getNewToken)
 router.post("/verify-email", authController.verifyEmail)
 router.post("/send-otp", authController.sendOtp)

@@ -3,3 +3,7 @@ import z from "zod";
 
 export type ISignupData = z.infer<typeof createUserSchema>;
 export type IUpdateUserData = z.infer<typeof updateValidation>;
+export interface IChangePasswordPayload {
+    currentPassword: string;
+    newPassword: string;
+}
