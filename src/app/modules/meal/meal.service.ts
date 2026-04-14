@@ -158,6 +158,20 @@ const getAllmeals = async (
   };
 };
 
+const getMealByProvider = async () => {
+  const meal = await prisma.meal.findFirst({
+    where: {
+      status: "APPROVED",
+    },
+    select: {
+      deliverycharge: true,
+    },
+  });
+
+  return meal;
+};
+
+
 const getSinglemeals = async (id: string) => {
   // Get the meal & reviews
   const result = await prisma.meal.findUniqueOrThrow({
@@ -553,5 +567,6 @@ export const mealService = {
   getSinglemeals,
   getOwnMeals,
   updateStatus,
-  getAllMealsForAdmin
+  getAllMealsForAdmin,
+  getMealByProvider
 };

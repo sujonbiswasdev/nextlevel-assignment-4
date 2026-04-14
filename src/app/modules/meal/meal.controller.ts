@@ -127,6 +127,32 @@ const getownmeals = catchAsync(async (req:Request,res:Response)=>{
             data:result
         })
 })
+const DeviceryCharge = catchAsync(async (req: Request, res: Response) => {
+    const { providerId } = req.query;
+
+    if (!providerId) {
+        return res.status(status.BAD_REQUEST).json({
+            success: false,
+            message: "providerId is required"
+        });
+    }
+    const meal = await mealService.getMealByProvider();
+
+    if (!meal) {
+        return res.status(status.NOT_FOUND).json({
+            success: false,
+            message: "No meal found for this provider"
+        });
+    }
+
+    sendResponse(res, {
+        httpStatusCode: status.OK,
+        success: true,
+        message: "Delivery charge retrieved successfully",
+        data: { deliveryCharge: meal.deliverycharge }
+    });
+});
+
 
 const updateStatus = catchAsync(async(req:Request,res:Response)=>{
     console.log(req.body,'req,body')
@@ -151,5 +177,6 @@ export const mealController = {
     GetSignlemeals,
     getownmeals,
     updateStatus,
-    getAllMealsForAdmin
+    getAllMealsForAdmin,
+    DeviceryCharge
 }

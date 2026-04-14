@@ -147,6 +147,18 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
             })
 } )
 
+const getOwnPayment = catchAsync(async (req: Request, res: Response) => {
+    const email = req.user?.email;
+    const result = await ServiceOrder.getOwnPaymentService(req.params.id as string,email as string);
+  
+    sendResponse(res, {
+      httpStatusCode: status.OK,
+      success: true,
+      message: "Fetched own payment participants successfully",
+      data: result,
+    });
+  });
+
 export const OrderController = {
     createOrder,
     getOwnmealsOrder,
@@ -154,5 +166,6 @@ export const OrderController = {
     getAllOrder,
     customerOrderStatusTrack,
     CustomerRunningAndOldOrder,
-    getSingleOrder
+    getSingleOrder,
+    getOwnPayment
 }

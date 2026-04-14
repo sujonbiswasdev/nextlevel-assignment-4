@@ -5,6 +5,9 @@ CREATE TYPE "Role" AS ENUM ('Customer', 'Provider', 'Admin');
 CREATE TYPE "Status" AS ENUM ('activate', 'suspend');
 
 -- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PAID', 'UNPAID', 'FREE');
+
+-- CreateEnum
 CREATE TYPE "DietaryPreference" AS ENUM ('HALAL', 'VEGAN', 'VEGETARIAN', 'ANY', 'GLUTEN_FREE', 'KETO', 'PALEO', 'DAIRY_FREE', 'NUT_FREE', 'LOW_SUGAR');
 
 -- CreateEnum
@@ -105,6 +108,7 @@ CREATE TABLE "meal" (
     "dietaryPreference" "DietaryPreference" NOT NULL DEFAULT 'HALAL',
     "providerId" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
+    "deliverycharge" INTEGER NOT NULL,
     "cuisine" "Cuisine" NOT NULL DEFAULT 'BANGLEDESHI',
     "status" "MealsStatus" NOT NULL DEFAULT 'APPROVED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -126,6 +130,7 @@ CREATE TABLE "order" (
     "address" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
 
     CONSTRAINT "order_pkey" PRIMARY KEY ("id")
 );
@@ -141,6 +146,22 @@ CREATE TABLE "orderitem" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "orderitem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Payment" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "mealId" TEXT NOT NULL,
+    "stripeEventId" TEXT,
+    "transactionId" UUID,
+    "paymentGatewayData" JSONB,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
+    "orderId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -191,6 +212,15 @@ CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
 CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Payment_stripeEventId_key" ON "Payment"("stripeEventId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_transactionId_key" ON "Payment"("transactionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_orderId_key" ON "Payment"("orderId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "providerprofile_userId_key" ON "providerprofile"("userId");
 
 -- AddForeignKey
@@ -219,6 +249,15 @@ ALTER TABLE "orderitem" ADD CONSTRAINT "orderitem_mealId_fkey" FOREIGN KEY ("mea
 
 -- AddForeignKey
 ALTER TABLE "orderitem" ADD CONSTRAINT "orderitem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_mealId_fkey" FOREIGN KEY ("mealId") REFERENCES "meal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "providerprofile" ADD CONSTRAINT "providerprofile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

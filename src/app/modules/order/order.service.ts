@@ -1,8 +1,6 @@
 import { v6 as uuidv6 } from 'uuid';
 import { Order, Orderitem } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
-import { formatZodIssues } from "../../utils/handleZodError";
-import { CreateorderData } from "./order.validation";
 import AppError from "../../errorHelper/AppError";
 import status from "http-status";
 import { ICreateorderData } from "./order.interface";
@@ -12,85 +10,124 @@ import { envVars } from "../../config/env";
 import { stripe } from "../../config/stripe.config";
 
 const CreateOrder = async (payload: ICreateorderData, email: string) => {
-  const exisUser=await prisma.user.findUnique({
-    where:{
-      email:email
-    }
-  })
-  const customerId=exisUser?.id
-  const mealItem = payload.items.find((i) => i.mealId);
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (!existingUser) throw new AppError(404, "User not found");
 
-  if (!mealItem) {
-    throw new AppError(400, "MealId is required");
+  if (!payload.items?.length) {
+    throw new AppError(400, "Order items are required");
   }
 
-  const existingMeal = await prisma.meal.findUnique({
-    where: {
-      id: mealItem.mealId,
-    },
+  const customerId = existingUser.id;
+
+  const mealIds = payload.items.map((item) => item.mealId);
+  const meals = await prisma.meal.findMany({
+    where: { id: { in: mealIds } },
   });
 
-  if (!existingMeal) {
-    throw new AppError(
-      status.NOT_FOUND,
-      `Meal with id (${mealItem.mealId}) does not exist.`
-    );
+  if (meals.length !== mealIds.length) {
+    throw new AppError(404, "One or more meals were not found");
   }
 
-  try {
-    const isFree = Number(existingMeal.deliverycharge) === 0;
-    const finalPayment = isFree ? "PAID" : "UNPAID";
-    const deliveryCharge = isFree ? 0 : existingMeal.deliverycharge;
+  const mealById = new Map(meals.map((meal) => [meal.id, meal] as const));
+  const providerIds = Array.from(new Set(meals.map((meal) => meal.providerId)));
+  if (providerIds.length !== 1) {
+    throw new AppError(
+      400,
+      "Single order supports meals from one provider only.",
+    );
+  }
+  const providerId = providerIds[0];
+  const deliverycharge = Number(meals[0]?.deliverycharge ?? 0);
 
+  try {
     const result = await prisma.$transaction(async (tx) => {
-      // ✅ MUST use tx here
-      const orderData = await tx.order.create({
+      const existingOrder = await tx.order.findMany({
+        where: {
+          paymentStatus: "UNPAID",
+        },
+      });
+
+      if (existingOrder) {
+        await prisma.order.deleteMany({
+          where:{
+            id:{
+              in:existingOrder.map((item)=>item.id)
+            }
+          }
+        })
+      }
+
+      const existingActiveOrder = await tx.order.findMany({
+        where: {
+          customerId,
+          providerId,
+          status: { in: ["PLACED", "PREPARING", "READY"] },
+          paymentStatus: "PAID",
+        },
+        include:{
+          orderitem:{include:{meal:true}}
+        }
+      });
+      console.log(existingActiveOrder,'ddd')
+      if(existingActiveOrder.length){
+        throw new AppError(
+          409,
+          `You already have an active order for this provider. Existing mealIds: ${existingActiveOrder.map((order)=>order.orderitem.map((item)=>item.mealId))}`
+        );
+   
+      }
+
+      const totalMealPrice = payload.items.reduce((sum, item) => {
+        const meal = mealById.get(item.mealId);
+        return sum + Number(meal?.price ?? 0) * item.quantity;
+      }, 0);
+
+      const order = await tx.order.create({
         data: {
-          customerId: customerId as string, // ensure not undefined
-          providerId: existingMeal.providerId,
+          customerId,
+          providerId,
           address: payload.address,
           phone: payload.phone,
-          paymentStatus: finalPayment,
+          paymentStatus: deliverycharge > 0 ? "UNPAID" : "PAID",
+          totalPrice: totalMealPrice + deliverycharge,
           first_name: payload.first_name ?? null,
           last_name: payload.last_name ?? null,
           orderitem: {
             createMany: {
-              data: payload.items.map((item) => ({
-                mealId: item.mealId,
-                price: existingMeal.price,
-                quantity: item.quantity,
-              })),
+              data: payload.items.map((item) => {
+                const meal = mealById.get(item.mealId);
+                return {
+                  mealId: item.mealId,
+                  price: Number(meal?.price ?? 0),
+                  quantity: item.quantity,
+                };
+              }),
             },
           },
-          totalPrice:
-            existingMeal.price *
-            payload.items.reduce((acc, item) => acc + item.quantity, 0),
         },
       });
- 
 
-      // ✅ যদি free হয়, Stripe লাগবে না
-      if (isFree) {
+      if (deliverycharge === 0) {
         return {
-          orderData,
-          paymentData: null,
+          order,
+          payment: null,
           paymentUrl: null,
+          message: "Order created successfully (no delivery charge).",
         };
       }
 
-      const transactionId = String(uuidv6());
-
-      const paymentData = await tx.payment.create({
+      const payment = await tx.payment.create({
         data: {
-          orderId: orderData.id,
-          amount: deliveryCharge,
-          transactionId,
-          mealId: existingMeal.id,
-          userId: customerId as string, // ensure string, not undefined
+          orderId: order.id,
+          amount: deliverycharge,
+          transactionId: String(uuidv6()),
+          status: "UNPAID",
+          userId: customerId,
+          mealId: payload.items[0].mealId,
         },
       });
- 
 
+  
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
@@ -98,47 +135,39 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
           {
             price_data: {
               currency: "bdt",
-              product_data: {
-                name: `Meal: ${existingMeal.meals_name}`,
-              },
-              unit_amount: deliveryCharge * 100,
+              product_data: { name: "Delivery charge" },
+              unit_amount: deliverycharge * 100,
             },
             quantity: 1,
           },
         ],
         metadata: {
-          orderId: orderData.id,
-          paymentId: paymentData.id,
+          orderId: order.id,
+          paymentId: payment.id,
         },
         payment_intent_data: {
           metadata: {
-            orderId: orderData.id,
-            paymentId: paymentData.id,
+            orderId: order.id,
+            paymentId: payment.id,
           },
         },
-
-        // ✅ FIXED URL
-        success_url: `${envVars.FRONTEND_URL}/payment-success?orderId=${orderData.id}&paymentId=${paymentData.id}`,
-        cancel_url: `${envVars.FRONTEND_URL}/payment-cancel?orderId=${orderData.id}&paymentId=${paymentData.id}`,
+        success_url: `${envVars.FRONTEND_URL}/payment/${order.id}?paymentId=${payment.id}`,
+        cancel_url: `${envVars.FRONTEND_URL}/payment/${order.id}?paymentId=${payment.id}`,
       });
 
-      console.log("Stripe URL:", session.url); // 🔥 debug
-
       return {
-        orderData,
-        paymentData,
+        order,
+        payment,
         paymentUrl: session.url,
+        message: "Order created successfully. Please complete payment from checkout URL.",
       };
     });
 
-    return {
-      order: result.orderData,
-      payment: result.paymentData,
-      paymentUrl: result.paymentUrl,
-    };
+    return result;
   } catch (error) {
     console.error(error);
-    throw new AppError(500, "Something went wrong, please try again");
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, "Failed to create order. Please try again.");
   }
 };
 
@@ -233,7 +262,6 @@ const getOwnmealsOrder = async (
       result,
     };
   }
-
   if (existingUser?.role == "Provider") {
     const result = await prisma.order.findMany({
       take: limit,
@@ -276,6 +304,27 @@ const getOwnmealsOrder = async (
       },
     };
   }
+};
+
+
+const getOwnPaymentService = async (id:string,email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+  const userId = user.id;
+  const orderres = await prisma.order.findMany({
+    where: {
+      customerId: userId,
+      id
+    },
+    include: {
+      payment: {select:{id:true,amount:true,status:true,transactionId:true,user:true}}
+    },
+  });
+  return orderres;
 };
 
 const UpdateOrderStatus = async (
@@ -485,4 +534,5 @@ export const ServiceOrder = {
   customerOrderStatusTrack,
   CustomerRunningAndOldOrder,
   getSingleOrder,
+  getOwnPaymentService
 };

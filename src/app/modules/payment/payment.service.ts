@@ -1,5 +1,3 @@
-// service for payment module
-
 import Stripe from "stripe";
 import { prisma } from "../../lib/prisma";
 import { parseDateForPrisma } from "../../utils/parseDate";
@@ -7,10 +5,10 @@ import AppError from "../../errorHelper/AppError";
 import { PaymentStatus } from "../../../../generated/prisma/enums";
 
 const deleteParticipantAndPayment = async (
-    orderId?: string,
+  participantId?: string,
   paymentId?: string,
 ) => {
-  if (!orderId || !paymentId) {
+  if (!participantId || !paymentId) {
     console.error("Missing participantId or paymentId in session metadata");
     return;
   }
@@ -21,21 +19,13 @@ const deleteParticipantAndPayment = async (
     });
 
     await tx.order.deleteMany({
-      where: { id: orderId },
+      where: { id: participantId },
     });
   });
 
   console.log(
-    `Payment failed. Deleted participant ${orderId} and payment ${paymentId}`,
+    `Payment failed. Deleted participant ${participantId} and payment ${paymentId}`,
   );
-};
-
-const deleteParticipantAndPaymentByIds = async (
-  participantId: string,
-  paymentId: string,
-) => {
-  await deleteParticipantAndPayment(participantId, paymentId);
-  return { message: "Payment canceled. Payment and participant deleted." };
 };
 
 const cleanupAllUnpaidPayments = async () => {
@@ -49,14 +39,14 @@ const cleanupAllUnpaidPayments = async () => {
   }
 
   const paymentIds = unpaidPayments.map((p) => p.id);
-  const oderIds = unpaidPayments.map((p) => p.orderId);
+  const orderIds = unpaidPayments.map((p) => p.orderId);
 
   const [deletedPayments, deletedParticipants] = await prisma.$transaction([
     prisma.payment.deleteMany({
       where: { id: { in: paymentIds } },
     }),
     prisma.order.deleteMany({
-      where: { id: { in: oderIds } },
+      where: { id: { in: orderIds } },
     }),
   ]);
 
@@ -79,28 +69,29 @@ const handlerStripeWebhookEvent = async (event: Stripe.Event) => {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
-      const orderId = session.metadata?.oderId;
+      const orderId = session.metadata?.orderId;
       const paymentId = session.metadata?.paymentId;
 
       if (!orderId || !paymentId) {
-        console.error("Missing orderId or paymentId in session metadata");
+        console.error("Missing appointmentId or paymentId in session metadata");
         return {
-          message: "Missing orderId or paymentId in session metadata",
+          message: "Missing appointmentId or paymentId in session metadata",
         };
       }
 
-      const orderID = await prisma.order.findUnique({
+      const order = await prisma.order.findUnique({
         where: {
           id: orderId,
         },
       });
-      if (!orderID) {
-        console.error(`Appointment with id ${orderID} not found`);
-        return { message: `Appointment with id ${orderID} not found` };
+      if (!order) {
+        console.error(`order with id ${orderId} not found`);
+        return { message: `order with id ${orderId} not found` };
       }
 
       if (session.payment_status !== "paid") {
         await deleteParticipantAndPayment(orderId, paymentId);
+        await cleanupAllUnpaidPayments()
         break;
       }
 
@@ -127,15 +118,16 @@ const handlerStripeWebhookEvent = async (event: Stripe.Event) => {
       });
 
       console.log(
-        `Processed checkout.session.completed for appointment ${orderId} and payment ${paymentId}`,
+        `Processed checkout.session.completed for order ${orderId} and payment ${paymentId}`,
       );
       break;
     }
     case "checkout.session.expired": {
       const session = event.data.object;
-      const participantId = session.metadata?.participantId;
+      const orderId = session.metadata?.orderId;
       const paymentId = session.metadata?.paymentId;
-      await deleteParticipantAndPayment(participantId, paymentId);
+      await deleteParticipantAndPayment(orderId, paymentId);
+      await cleanupAllUnpaidPayments()
       break;
     }
 
@@ -148,24 +140,27 @@ const handlerStripeWebhookEvent = async (event: Stripe.Event) => {
     }
     case "payment_intent.payment_failed": {
       const session = event.data.object;
-      const participantId = session.metadata?.participantId;
+      const orderId = session.metadata?.orderId;
       const paymentId = session.metadata?.paymentId;
-      await deleteParticipantAndPayment(participantId, paymentId);
+      await deleteParticipantAndPayment(orderId, paymentId);
+      await cleanupAllUnpaidPayments()
       break;
     }
     case "checkout.session.async_payment_failed":{
       const session = event.data.object;
-      const participantId = session.metadata?.participantId;
+      const orderId = session.metadata?.orderId;
       const paymentId = session.metadata?.paymentId;
-      await deleteParticipantAndPayment(participantId, paymentId);
+      await deleteParticipantAndPayment(orderId, paymentId);
+      await cleanupAllUnpaidPayments()
       break;
     }
     case "payment_intent.canceled":{
       const session = event.data.object;
-      const participantId = session.metadata?.participantId;
+      const orderId = session.metadata?.orderId;
       const paymentId = session.metadata?.paymentId;
 
-      await deleteParticipantAndPayment(participantId, paymentId);
+      await deleteParticipantAndPayment(orderId, paymentId);
+      await cleanupAllUnpaidPayments()
       break;
     }
     default:
@@ -173,6 +168,7 @@ const handlerStripeWebhookEvent = async (event: Stripe.Event) => {
   }
   return {message : `Webhook Event ${event.id} processed successfully`}
 };
+
 export const PaymentService = {
-    handlerStripeWebhookEvent
-}
+  handlerStripeWebhookEvent,
+};

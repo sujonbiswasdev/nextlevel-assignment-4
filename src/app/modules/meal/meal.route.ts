@@ -7,6 +7,7 @@ import { CreatemealData, mealupdateStatus, UpdatemealData } from "./meal.validat
 
 const router=Router()
 router.get('/meals',mealController.Getallmeals)
+router.get('/deviveryCharge',mealController.DeviceryCharge)
 router.get('/admin/meals',auth([UserRoles.Admin]),mealController.getAllMealsForAdmin)
 router.get('/provider/meals/own',auth([UserRoles.Provider]),mealController.getownmeals)
 router.post('/provider/meal',auth([UserRoles.Provider]),validateRequest(CreatemealData),mealController.createMeal)
