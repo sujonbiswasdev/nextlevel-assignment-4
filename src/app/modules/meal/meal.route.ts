@@ -14,6 +14,6 @@ router.post('/provider/meal',auth([UserRoles.Provider]),validateRequest(Createme
 router.delete('/provider/meal/:id',auth([UserRoles.Provider,UserRoles.Admin]),mealController.DeleteMeals)
 router.put('/provider/meal/:id',auth([UserRoles.Provider]),validateRequest(UpdatemealData),mealController.UpdateMeals)
 router.get('/meal/:id',mealController.GetSignlemeals)
-router.put('/admin/meal/:id',auth([UserRoles.Admin]),mealController.updateStatus)
+router.patch('/meal/:id',auth([UserRoles.Admin]),mealController.updateStatus)
 
 export const mealRouter={router}

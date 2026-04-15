@@ -41,48 +41,44 @@ const CreateCategory = async (data: ICreateCategory, email: string) => {
 };
 
 const getCategory = async ( 
-  data: Record<string, any>,
+  data?: Record<string, any>,
   page?: number,
   limit?: number | undefined,
   skip?: number,
   ) => {
+    console.log(data?.name,'dsfdsf')
     const andConditions: CategoryWhereInput[] = [];
-    if(data){
-      if (data.name) {
-        andConditions.push({
-          name: {
-            equals: data.cuisine,
-          },
-        });
-      }
 
-      if (data.createdAt) {
-        const dateRange = parseDateForPrisma(data.createdAt);
-        andConditions.push({ createdAt: dateRange.gte });
-      }
-
-      if (data.adminId) {
-        andConditions.push({
-          adminId: {
-            contains: data.adminId,
-            mode: "insensitive",
-          },
-        });
-      }
-
-      if (data.id) {
-        andConditions.push({
-          id: {
-            contains: data.id,
-            mode: "insensitive",
-          },
-        });
-      }
-
+    if (data?.name) {
+      andConditions.push({
+        name: data.name
+      });
     }
+
+
+    if (data?.createdAt) {
+      const dateRange = parseDateForPrisma(data.createdAt);
+      andConditions.push({ createdAt: dateRange.gte });
+    }
+    if (data?.adminId) {
+      andConditions.push({
+        adminId: {
+          contains: data.adminId,
+          mode: "insensitive",
+        },
+      });
+    }
+
+    if (data?.id) {
+      andConditions.push({
+        id: {
+          contains: data.id,
+          mode: "insensitive",
+        },
+      });
+    }
+    console.log(andConditions,'sdfsdfsdfsf')
   const result = await prisma.category.findMany({
-    take: limit,
-    skip,
     where:{
       AND:andConditions
     },

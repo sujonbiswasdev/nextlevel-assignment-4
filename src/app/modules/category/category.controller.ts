@@ -3,6 +3,7 @@ import { categoryService } from "./category.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { status } from "http-status";
+import paginationSortingHelper from "../../helpers/paginationHelping";
 
 const CreateCategory = catchAsync(
   async (req: Request, res: Response) => {
@@ -26,7 +27,10 @@ const CreateCategory = catchAsync(
 );
 
 const getCategory = catchAsync(async (req: Request, res: Response) => {
-  const result = await categoryService.getCategory();
+  const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(
+    req.query,
+  );
+  const result = await categoryService.getCategory(req.query,page,limit,skip);
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,

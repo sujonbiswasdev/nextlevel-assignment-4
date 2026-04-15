@@ -502,62 +502,120 @@ const updateStatus = async (data: any, mealid: string) => {
   });
   return result;
 };
-const getAllMealsForAdmin=async(data: MealQuery,
+const getAllMealsForAdmin=async(
+  data: Record<string, any>,
+  isAvailable?: boolean,
   page?: number,
   limit?: number | undefined,
   skip?: number,
   sortBy?: string | undefined,
-  sortOrder?: string | undefined,)=>{
-      const andConditions: MealWhereInput[] | MealWhereInput = [];
+  sortOrder?: string | undefined,
+  search?:string | undefined
+)=>{
+    const andConditions: MealWhereInput[] | MealWhereInput = [];
+    if (data) {
+      const orConditions: any[] = [];
+  
+      if (search) {
+        orConditions.push(
+          {
+            meals_name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        );
+      }
+      if (data.cuisine) {
+        orConditions.push({
+          cuisine: {
+            equals: data.cuisine,
+          },
+        });
+      }
 
-     if (data) {
-    const orConditions: any[] = [];
-    if (data.meals_name) {
-      orConditions.push({
-        meals_name: {
-          contains: data.meals_name,
-          mode: "insensitive",
-        },
-      });
-    }
-    if (data.description) {
-      orConditions.push({
-        description: {
-          contains: data.description,
-          mode: "insensitive",
-        },
-      });
-    }
-    if (data.cuisine) {
-      orConditions.push({
-        cuisine: {
-          equals: data.cuisine,
-        },
-      });
-    }
-    if (data.category_name) {
-      orConditions.push({
-        category_name: {
-          contains: data.category_name,
-          mode: "insensitive",
-        },
-      });
-    }
-  }
-  const result = await prisma.meal.findMany({
-    take: limit,
-    skip,
-     where: {
-      AND: andConditions,
-      status: "APPROVED",
-    },
-    orderBy: {
-      [sortBy!]: sortOrder,
-    },
-  });
-  return result
+      if (data.status) {
+        orConditions.push({
+          status: {
+            equals: data.status,
+          },
+        });
+      }
 
-
+      if (data.category_name) {
+        orConditions.push({
+          category_name: {
+            contains: data.category_name,
+            mode: "insensitive",
+          },
+        });
+      }
+      if (orConditions.length > 0) {
+        andConditions.push({ OR: orConditions });
+      }
+    }
+    if (typeof isAvailable === "boolean") {
+      andConditions.push({ isAvailable: isAvailable });
+    }
+  
+    if (data.price) {
+      andConditions.push({
+        price: {
+          gte: 0,
+          lte: Number(data.price),
+        },
+      });
+    }
+    if (data.dietaryPreference?.length) {
+      const dietaryList = data.dietaryPreference.split(
+        ",",
+      ) as DietaryPreference[];
+      andConditions.push({
+        OR: dietaryList.map((item) => ({ dietaryPreference: item })),
+      });
+    }
+    const meals = await prisma.meal.findMany({
+      take: limit,
+      skip,
+      where: {
+        AND: andConditions,
+      },
+      include: {
+        provider: {
+          include:{user:true}
+        },
+        reviews: {
+          
+          where: {
+            parentId: null,
+            rating: { gt: 0 },
+            status: "APPROVED",
+          },
+          include: {
+            customer: true,
+          },
+        },
+      },
+      orderBy: {
+        [sortBy!]: sortOrder,
+      },
+    });
+    const total = await prisma.meal.count({ where: { AND: andConditions } });
+    return {
+      data: meals,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalpage: Math.ceil(total / limit!) || 1,
+      },
+    };
 }
 
 export const mealService = {

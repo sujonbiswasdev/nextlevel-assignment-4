@@ -8,6 +8,7 @@ export interface UserQueryOptions{
     role?: string;
     status?: string;
     phone?: string;
+    name?:string
   };
   isactivequery: boolean;
   page?: number;

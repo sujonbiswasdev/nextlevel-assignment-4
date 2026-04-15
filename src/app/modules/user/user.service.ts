@@ -14,6 +14,12 @@ const GetAllUsers = async (
       email: data.data?.email,
     });
   }
+
+  if (typeof data.data?.name == "string") {
+    andCondition.push({
+      name: data.data?.name,
+    });
+  }
   if (typeof data.data?.phone == "string") {
     andCondition.push({
       email: data.data?.phone,
