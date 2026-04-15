@@ -5,6 +5,8 @@ import { formatZodIssues } from "../../utils/handleZodError";
 import { createReviewsData, updateReviewsData } from "./reviews.validation";
 import { ICreatereviewData, IUpdatereviewData } from "./reviews.interface";
 import AppError from "../../errorHelper/AppError";
+import { ReviewWhereInput } from "../../../../generated/prisma/models";
+import { parseDateForPrisma } from "../../utils/parseDate";
 
 const CreateReviews = async (customerid: string, mealid: string, data: ICreatereviewData) => {
     const existingmeal = await prisma.meal.findUnique({
@@ -145,14 +147,88 @@ const moderateReview = async (id: string, data: { status: ReviewStatus }) => {
     return result
 }
 
-const getAllreviews = async () => {
+const getAllreviews = async (
+    data?: Record<string, any>,
+    page?: number,
+    limit?: number | undefined,
+    skip?: number,
+    sortBy?: string | undefined,
+    sortOrder?: string | undefined,
+    search?:string | undefined) => {
+
+        const andConditions: ReviewWhereInput[]  = [];
+
+        if (search) {
+          const orConditions: any[] = [];
+          orConditions.push(
+            {
+                comment: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          );
+          if (orConditions.length > 0) {
+            andConditions.push({ OR: orConditions });
+          }
+        }
+        if (data?.createdAt) {
+            const dateRange = parseDateForPrisma(data.createdAt);
+            andConditions.push({ createdAt: dateRange.gte });
+          }
+
+          
+
+          if (data?.rating) {
+            andConditions.push({
+              rating: {
+                equals: data.rating,
+              },
+            });
+          }
+
+          if (data?.parentId) {
+            andConditions.push({
+              parentId: {
+                equals: data.parentId,
+              },
+            });
+          }
+          
+  if (data?.status) {
+    andConditions.push({
+      status: {
+        equals: data.status,
+      },
+    });
+  }
     const result = await prisma.review.findMany({
+        take: limit,
+        skip,
+        where:{
+            AND:andConditions
+        },
         include: {
             customer: true,
             meal: true,
             replies: true
         }
     })
+
+    const total=await prisma.review.count({where:{
+        AND:andConditions,
+      }})
+
+      return {result,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalpage: Math.ceil(total / limit!) || 1,
+          },
+        
+      };
+
 
     return result
 }

@@ -3,6 +3,7 @@ import { ReviewsService } from "./reviews.service"
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
+import paginationSortingHelper from "../../helpers/paginationHelping";
 
 const CreateReviews =catchAsync(async (req: Request, res: Response) => {
          const user = req.user
@@ -73,7 +74,11 @@ const getReviewByid = catchAsync(async (req: Request, res: Response) => {
 }
 )
 const getAllreviews=catchAsync(async (req: Request, res: Response) => {
-    const result = await ReviewsService.getAllreviews()
+    const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(
+        req.query,
+      );
+      const {search}=req.query
+    const result = await ReviewsService.getAllreviews(req.query as any, page, limit, skip, sortBy, sortOrder,search as string)
     sendResponse(res,{
         httpStatusCode:status.OK,
         success:true,

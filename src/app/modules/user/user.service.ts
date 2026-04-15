@@ -41,6 +41,7 @@ const GetAllUsers = async (
     },
     include: {
       provider: true,
+      accounts:true
     },
     orderBy: {
       [data.sortBy!]: data.sortOrder,
@@ -54,7 +55,7 @@ const GetAllUsers = async (
   return {
     data: result,
     pagination: {
-      totalusers,
+      total:totalusers,
       page:data.page,
       limit:data.limit,
       totalpage: Math.ceil(totalusers / data.limit!) || 1,
@@ -164,6 +165,7 @@ const UpdateUser = async (id: string, data: Partial<User>) => {
       status: data.status,
       email: data.email,
     },
+    
   });
   return result
 };
