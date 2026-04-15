@@ -4,6 +4,8 @@ import { UpdatecategoryData } from "./category.validation";
 import { ICreateCategory, IUpdateCategory } from "./category.interface";
 import AppError from "../../errorHelper/AppError";
 import status from "http-status";
+import { CategoryWhereInput } from "../../../../generated/prisma/models";
+import { parseDateForPrisma } from "../../utils/parseDate";
 const CreateCategory = async (data: ICreateCategory, email: string) => {
   const adminUser = await prisma.user.findUnique({
     where: { email },
@@ -38,8 +40,52 @@ const CreateCategory = async (data: ICreateCategory, email: string) => {
   return result;
 };
 
-const getCategory = async () => {
+const getCategory = async ( 
+  data: Record<string, any>,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  ) => {
+    const andConditions: CategoryWhereInput[] = [];
+    if(data){
+      if (data.name) {
+        andConditions.push({
+          name: {
+            equals: data.cuisine,
+          },
+        });
+      }
+
+      if (data.createdAt) {
+        const dateRange = parseDateForPrisma(data.createdAt);
+        andConditions.push({ createdAt: dateRange.gte });
+      }
+
+      if (data.adminId) {
+        andConditions.push({
+          adminId: {
+            contains: data.adminId,
+            mode: "insensitive",
+          },
+        });
+      }
+
+      if (data.id) {
+        andConditions.push({
+          id: {
+            contains: data.id,
+            mode: "insensitive",
+          },
+        });
+      }
+
+    }
   const result = await prisma.category.findMany({
+    take: limit,
+    skip,
+    where:{
+      AND:andConditions
+    },
     include: {
       meals: {
         where: {
@@ -50,8 +96,19 @@ const getCategory = async () => {
     },
     orderBy: { name: "desc" },
   });
-  return result;
-};
+
+  const total=await prisma.category.count({where:{
+    AND:andConditions
+  }})
+  return {
+    result,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalpage: Math.ceil(total / limit!) || 1,
+    },
+}};
 
 const SingleCategory = async (id: string) => {
   const result = await prisma.category.findFirstOrThrow({

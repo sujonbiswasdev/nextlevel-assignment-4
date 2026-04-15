@@ -374,7 +374,6 @@ const getOwnMeals = async (
       const dateRange = parseDateForPrisma(data.createdAt);
       andConditions.push({ createdAt: dateRange.gte });
     }
-
     if (orConditions.length > 0) {
       andConditions.push({ OR: orConditions });
     }
