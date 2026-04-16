@@ -139,8 +139,31 @@ const getAllPayment= catchAsync(async (req: Request, res: Response) => {
     }
 });
 
+const deletePayment = catchAsync(async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+
+  try {
+      const result = await PaymentService.deletePayment(paymentId as string);
+      return sendResponse(res, {
+          httpStatusCode: status.OK,
+          success: true,
+          message: "Payment deleted successfully",
+          data: result
+      });
+  } catch (error) {
+      console.error("Error deleting payment:", error);
+      return sendResponse(res, {
+          httpStatusCode: status.INTERNAL_SERVER_ERROR,
+          success: false,
+          message: "Error deleting payment"
+      });
+  }
+});
+
+
 export const PaymentController = {
     handleStripeWebhookEvent,
     getAllPayment,
-    updatePaymentStatus
+    updatePaymentStatus,
+    deletePayment
 }

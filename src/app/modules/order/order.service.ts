@@ -1,4 +1,4 @@
-import { v6 as uuidv6 } from 'uuid';
+import { v6 as uuidv6 } from "uuid";
 import { Order, Orderitem } from "../../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../errorHelper/AppError";
@@ -20,6 +20,7 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
   const customerId = existingUser.id;
 
   const mealIds = payload.items.map((item) => item.mealId);
+  console.log(mealIds, "mealdis");
   const meals = await prisma.meal.findMany({
     where: { id: { in: mealIds } },
   });
@@ -49,12 +50,12 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
 
       if (existingOrder) {
         await prisma.order.deleteMany({
-          where:{
-            id:{
-              in:existingOrder.map((item)=>item.id)
-            }
-          }
-        })
+          where: {
+            id: {
+              in: existingOrder.map((item) => item.id),
+            },
+          },
+        });
       }
 
       const existingActiveOrder = await tx.order.findMany({
@@ -64,17 +65,23 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
           status: { in: ["PLACED", "PREPARING", "READY"] },
           paymentStatus: "PAID",
         },
-        include:{
-          orderitem:{include:{meal:true}}
-        }
+        include: {
+          orderitem: { include: { meal: true } },
+        },
       });
-      console.log(existingActiveOrder,'ddd')
-      if(existingActiveOrder.length){
+      const existingMealIds = existingActiveOrder.flatMap((order) =>
+        order.orderitem.map((item) => item.mealId),
+      );
+
+      const matchedMealIds = existingMealIds.filter((id) =>
+        mealIds.includes(id),
+      );
+
+      if (matchedMealIds.length > 0) {
         throw new AppError(
           409,
-          `You already have an active order for this provider. Existing mealIds: ${existingActiveOrder.map((order)=>order.orderitem.map((item)=>item.mealId))}`
+          `Already ordered meals: ${matchedMealIds.join(", ")}`
         );
-   
       }
 
       const totalMealPrice = payload.items.reduce((sum, item) => {
@@ -89,7 +96,7 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
           address: payload.address,
           phone: payload.phone,
           paymentStatus: deliverycharge > 0 ? "UNPAID" : "PAID",
-          totalPrice: totalMealPrice + deliverycharge,
+          totalPrice: totalMealPrice,
           first_name: payload.first_name ?? null,
           last_name: payload.last_name ?? null,
           orderitem: {
@@ -127,7 +134,6 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
         },
       });
 
-  
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
@@ -136,7 +142,7 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
             price_data: {
               currency: "bdt",
               product_data: { name: "Delivery charge" },
-              unit_amount: deliverycharge * 100,
+              unit_amount: 120 * 100,
             },
             quantity: 1,
           },
@@ -159,7 +165,8 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
         order,
         payment,
         paymentUrl: session.url,
-        message: "Order created successfully. Please complete payment from checkout URL.",
+        message:
+          "Order created successfully. Please complete payment from checkout URL.",
       };
     });
 
@@ -172,17 +179,15 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
 };
 
 const getOwnmealsOrder = async (
-  email?:string,
+  email?: string,
   data?: Record<string, any>,
   page?: number,
   limit?: number | undefined,
   skip?: number,
   sortBy?: string | undefined,
   sortOrder?: string | undefined,
-  search?:string | undefined
+  search?: string | undefined,
 ) => {
-
-
   const existingUser = await prisma.user.findUnique({
     where: { email },
     include: { provider: true },
@@ -195,7 +200,7 @@ const getOwnmealsOrder = async (
     };
   }
 
-  const andConditions: OrderWhereInput[]  = [];
+  const andConditions: OrderWhereInput[] = [];
 
   if (search) {
     const orConditions: any[] = [];
@@ -228,7 +233,7 @@ const getOwnmealsOrder = async (
 
   if (data?.phone) {
     andConditions.push({
-      phone:data.phone
+      phone: data.phone,
     });
   }
   if (data?.paymentStatus) {
@@ -256,7 +261,7 @@ const getOwnmealsOrder = async (
     const result = await prisma.order.findMany({
       where: {
         customerId: existingUser.id,
-        AND:andConditions
+        AND: andConditions,
       },
       include: {
         orderitem: {
@@ -282,7 +287,7 @@ const getOwnmealsOrder = async (
       skip,
       where: {
         providerId: existingUser.provider?.id,
-        AND:andConditions
+        AND: andConditions,
       },
       include: {
         orderitem: {
@@ -320,8 +325,7 @@ const getOwnmealsOrder = async (
   }
 };
 
-
-const getOwnPaymentService = async (id:string,email: string) => {
+const getOwnPaymentService = async (id: string, email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
   });
@@ -332,10 +336,18 @@ const getOwnPaymentService = async (id:string,email: string) => {
   const orderres = await prisma.order.findMany({
     where: {
       customerId: userId,
-      id
+      id,
     },
     include: {
-      payment: {select:{id:true,amount:true,status:true,transactionId:true,user:true}}
+      payment: {
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          transactionId: true,
+          user: true,
+        },
+      },
     },
   });
   return orderres;
@@ -391,7 +403,7 @@ const UpdateOrderStatus = async (
   }
 
   if (role == "Provider" && status === "CANCELLED") {
-    throw new AppError(400,"CANCELLED only Customer Change");
+    throw new AppError(400, "CANCELLED only Customer Change");
   }
 
   if (role == "Provider") {
@@ -431,24 +443,24 @@ const UpdateOrderStatus = async (
       message: `update order status successfully`,
       result,
     };
-}
+  }
 };
 
 const getAllorder = async (
-  role?:string,
+  role?: string,
   data?: Record<string, any>,
   page?: number,
   limit?: number | undefined,
   skip?: number,
   sortBy?: string | undefined,
   sortOrder?: string | undefined,
-  search?:string | undefined) => {
+  search?: string | undefined,
+) => {
   if (role !== "Admin") {
     throw new AppError(403, "View all orders is only allowed for Admin users.");
   }
 
-
-  const andConditions: OrderWhereInput[]  = [];
+  const andConditions: OrderWhereInput[] = [];
 
   if (search) {
     const orConditions: any[] = [];
@@ -481,7 +493,7 @@ const getAllorder = async (
 
   if (data?.phone) {
     andConditions.push({
-      phone:data.phone
+      phone: data.phone,
     });
   }
   if (data?.paymentStatus) {
@@ -506,16 +518,16 @@ const getAllorder = async (
     andConditions.push({ createdAt: dateRange.gte });
   }
   const result = await prisma.order.findMany({
-    where:{
-      AND:andConditions
+    where: {
+      AND: andConditions,
     },
-      include: {
-        orderitem: {
-          include: {
-            meal: true,
-          },
+    include: {
+      orderitem: {
+        include: {
+          meal: true,
         },
       },
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -644,9 +656,6 @@ const getSingleOrder = async (id: string) => {
 };
 
 const deleteOrder = async (id: string, role: string) => {
-
-
-
   const existingOrder = await prisma.order.findUnique({
     where: { id },
   });
@@ -654,7 +663,7 @@ const deleteOrder = async (id: string, role: string) => {
   if (!existingOrder) {
     throw new AppError(status.NOT_FOUND, "Order not found");
   }
- const deletedOrder = await prisma.order.delete({
+  const deletedOrder = await prisma.order.delete({
     where: { id },
   });
 
@@ -665,7 +674,6 @@ const deleteOrder = async (id: string, role: string) => {
   };
 };
 
-
 export const ServiceOrder = {
   CreateOrder,
   getOwnmealsOrder,
@@ -675,5 +683,5 @@ export const ServiceOrder = {
   CustomerRunningAndOldOrder,
   getSingleOrder,
   getOwnPaymentService,
-  deleteOrder
+  deleteOrder,
 };

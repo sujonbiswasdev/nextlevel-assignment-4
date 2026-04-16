@@ -285,9 +285,42 @@ const updatePaymentStatusWithOrderCheck = async (
 };
 
 
+const deletePayment = async (paymentId: string) => {
+  // Find the payment
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { order: true }
+  });
+  if (!payment) {
+    throw new Error("Payment not found");
+  }
+
+  // Check if participant is associated
+  if (!payment.order) {
+    throw new Error("Associated participant not found");
+  }
+
+  const [deletedPayment, deletedOrder] = await prisma.$transaction([
+    prisma.payment.delete({
+      where: { id: paymentId }
+    }),
+    prisma.order.delete({
+      where: { id: payment.order.id },
+    })
+  ]);
+
+  return {
+    payment: deletedPayment,
+    order: deletedOrder
+  };
+};
+
+
+
 
 export const PaymentService = {
   handlerStripeWebhookEvent,
   getAllPaymentsService,
-  updatePaymentStatusWithOrderCheck
+  updatePaymentStatusWithOrderCheck,
+  deletePayment
 };
