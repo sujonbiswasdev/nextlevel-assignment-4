@@ -266,9 +266,6 @@ const getSinglemeals = async (id: string) => {
 
 const UpdateMeals = async (data: IUpdateMealsData, mealid: string) => {
   const { category_name } = data as any;
-  if(!data.image){
-    throw new AppError(404, "Image is required");
-  }
   const existmeal = await prisma.meal.findUnique({
     where: { id: mealid },
   });
@@ -283,7 +280,14 @@ const UpdateMeals = async (data: IUpdateMealsData, mealid: string) => {
       id: mealid,
     },
     data: {
-      ...data,
+      meals_name: data.meals_name,
+    description: data.description,
+    ...(data.image !== null && typeof data.image !== "undefined" ? { image: data.image } : {}),
+    price: data.price,
+    isAvailable: data.isAvailable,
+    category_name: data.category_name,
+    cuisine: data.cuisine,
+    dietaryPreference:data.dietaryPreference
     },
   });
 
@@ -291,21 +295,21 @@ const UpdateMeals = async (data: IUpdateMealsData, mealid: string) => {
 };
 
 const DeleteMeals = async (mealid: string) => {
-  const existmeal = await prisma.meal.findUnique({
-    where: {
-      id: mealid,
+  const orderitem=await prisma.orderitem.findFirst({
+    where:{
+      mealId:mealid
     },
-  });
-  if (!existmeal) {
-    throw new AppError(status.NOT_FOUND, "meal not found");
-  }
-  const result = await prisma.meal.delete({
-    where: {
-      id: mealid,
-    },
-  });
-  console.log(result,'result')
+    select:{
+      orderId:true
+    }
+  })
+  await prisma.order.delete({where:{id:orderitem?.orderId}})
 
+ const result = await prisma.meal.delete({
+    where: {
+      id: mealid,
+    },
+  });
   return result;
 };
 

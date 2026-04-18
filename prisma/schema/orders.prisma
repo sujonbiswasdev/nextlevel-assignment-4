@@ -26,7 +26,7 @@ model Orderitem {
   mealId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade,onUpdate: Cascade)
   order     Order    @relation(fields: [orderId], references: [id],  onDelete: Cascade)
 
   @@map("orderitem")

@@ -6,44 +6,55 @@ import AppError from "../../errorHelper/AppError";
 import { UserQueryOptions } from "./user.interface";
 
 const GetAllUsers = async (
- data:UserQueryOptions
+  data: Record<string, any>,
+  isactivequery?: boolean,
+  emailVerifiedquery?:boolean,
+  page?: number,
+  limit?: number | undefined,
+  skip?: number,
+  sortBy?: string | undefined,
+  sortOrder?: string | undefined,
+  search?:string | undefined
+
 ) => {
+  console.log(emailVerifiedquery,'dd')
   const andCondition: UserWhereInput[] = [];
-  if (typeof data.data?.email == "string") {
+  if (typeof data.email == "string") {
     andCondition.push({
-      email: data.data?.email,
+      email: data.email,
     });
   }
 
-  if (typeof data.data?.name == "string") {
-    andCondition.push({
-      name: data.data?.name,
-    });
-  }
-  if (typeof data.data?.phone == "string") {
-    andCondition.push({
-      email: data.data?.phone,
-    });
-  }
-  if (typeof data.data?.emailVerified == "boolean") {
-    andCondition.push({ emailVerified: data.data?.emailVerified });
-  }
-  if (typeof data.data?.role == "string") {
-    andCondition.push({ role: data.data?.role as Role });
-  }
-  if (typeof data.data?.status == "string") {
-    andCondition.push({ status: data.data?.status as Status });
+  if (typeof isactivequery === "boolean") {
+    andCondition.push({ isActive: isactivequery });
   }
 
-  if (typeof data.isactivequery == "boolean") {
-    andCondition.push({ isActive: data.isactivequery });
+  if (typeof data.name == "string") {
+    andCondition.push({
+      name: data.name,
+    });
+  }
+  if (typeof data.phone == "string") {
+    andCondition.push({
+      email: data.phone,
+    });
+  }
+  if (typeof emailVerifiedquery == "boolean") {
+    andCondition.push({ emailVerified: emailVerifiedquery });
+  }
+  if (typeof data.role == "string") {
+    andCondition.push({ role: data.role as Role });
+  }
+  if (typeof data.status == "string") {
+    andCondition.push({ status: data.status as Status });
   }
 
   const result = await prisma.user.findMany({
-    take: data.limit,
-    skip:data.skip,
+    take: limit,
+    skip,
     where: {
       AND: andCondition,
+      ...(data.data?.isActive!==null?{isActive:data.data?.isActive}:{})
     },
     include: {
       provider: true,
@@ -53,18 +64,19 @@ const GetAllUsers = async (
       [data.sortBy!]: data.sortOrder,
     },
   });
-  const totalusers = await prisma.user.count({
+  const total = await prisma.user.count({
     where: {
       AND: andCondition,
+      ...(data.data?.isActive!==null?{isActive:data.data?.isActive}:{})
     },
   });
   return {
     data: result,
     pagination: {
-      total:totalusers,
-      page:data.page,
-      limit:data.limit,
-      totalpage: Math.ceil(totalusers / data.limit!) || 1,
+      total,
+      page,
+      limit,
+      totalpage: Math.ceil(total / limit!) || 1,
     },
   };
 };

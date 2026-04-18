@@ -33,8 +33,9 @@ const UpdateMeals = catchAsync(async (req: Request, res: Response) => {
   }
   const payload = {
     ...req.body,
-    image:req.file?.path || req.body.image
-};
+    image: req.file?.path || req.body.image || null
+  };
+console.log(payload,'payme')
   const result = await mealService.UpdateMeals(
     payload,
     req.params.id as string,

@@ -5,27 +5,35 @@ import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
 const GetAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const search = req.query;
+  const {search} = req.query;
   const { isActive } = req.query;
   const isactivequery = isActive
-    ? req.params.isActive === "true"
+    ? req.query.isActive === "true"
       ? true
       : req.query.isActive === "false"
+        ? false
+        : undefined
+    : undefined;
+    const emailVerifiedquery = req.query.emailVerified
+    ? req.query.emailVerified=== "true"
+      ? true
+      : req.query.emailVerified === "false"
         ? false
         : undefined
     : undefined;
   const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(
     req.query,
   );
-  const result = await UserService.GetAllUsers({
-    data: search,
-    isactivequery: isactivequery as boolean,
+  const result = await UserService.GetAllUsers(
+    req.query as any,
+    isactivequery as boolean,
+    emailVerifiedquery as boolean,
     page,
     limit,
     skip,
     sortBy,
-    sortOrder: sortOrder as "asc" | "desc" | undefined,
-  });
+    sortOrder,
+    search as string);
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,

@@ -20,7 +20,6 @@ const CreateOrder = async (payload: ICreateorderData, email: string) => {
   const customerId = existingUser.id;
 
   const mealIds = payload.items.map((item) => item.mealId);
-  console.log(mealIds, "mealdis");
   const meals = await prisma.meal.findMany({
     where: { id: { in: mealIds } },
   });
@@ -297,6 +296,7 @@ const getOwnmealsOrder = async (
         },
       },
     });
+    console.log(result,'ddd')
     let total = 0;
     if (existingUser?.role === "Provider") {
       total = await prisma.order.count({
@@ -562,7 +562,6 @@ const customerOrderStatusTrack = async (mealid: string, userid: string) => {
   if (existingOrder.length === 0) {
     throw new AppError(status.NOT_FOUND, "no order found for this meal");
   }
-  console.log(existingOrder, "data");
 
   // const result = await prisma.order.findMany({
   //     include: {
@@ -585,7 +584,6 @@ const customerOrderStatusTrack = async (mealid: string, userid: string) => {
   //         createdAt: 'desc'
   //     }
   // })
-  // console.log(result,'dd')
   return {
     success: true,
     message: `customer order status track successfully`,

@@ -1200,9 +1200,6 @@ var getSinglemeals = async (id) => {
 };
 var UpdateMeals = async (data, mealid) => {
   const { category_name } = data;
-  if (!data.image) {
-    throw new AppError_default(404, "Image is required");
-  }
   const existmeal = await prisma.meal.findUnique({
     where: { id: mealid }
   });
@@ -1217,7 +1214,14 @@ var UpdateMeals = async (data, mealid) => {
       id: mealid
     },
     data: {
-      ...data
+      meals_name: data.meals_name,
+      description: data.description,
+      ...data.image !== null && typeof data.image !== "undefined" ? { image: data.image } : {},
+      price: data.price,
+      isAvailable: data.isAvailable,
+      category_name: data.category_name,
+      cuisine: data.cuisine,
+      dietaryPreference: data.dietaryPreference
     }
   });
   return result;
@@ -1236,7 +1240,6 @@ var DeleteMeals = async (mealid) => {
       id: mealid
     }
   });
-  console.log(result, "result");
   return result;
 };
 var getOwnMeals = async (email, data, isAvailable, page, limit, skip, sortBy, sortOrder, search) => {
@@ -1588,8 +1591,9 @@ var UpdateMeals2 = catchAsync(async (req, res) => {
   }
   const payload = {
     ...req.body,
-    image: req.file?.path || req.body.image
+    image: req.file?.path || req.body.image || null
   };
+  console.log(payload, "payme");
   const result = await mealService.UpdateMeals(
     payload,
     req.params.id
@@ -2312,7 +2316,6 @@ var CreateOrder = async (payload, email) => {
   }
   const customerId = existingUser.id;
   const mealIds = payload.items.map((item) => item.mealId);
-  console.log(mealIds, "mealdis");
   const meals = await prisma.meal.findMany({
     where: { id: { in: mealIds } }
   });
@@ -2786,7 +2789,6 @@ var customerOrderStatusTrack = async (mealid, userid) => {
   if (existingOrder.length === 0) {
     throw new AppError_default(status10.NOT_FOUND, "no order found for this meal");
   }
-  console.log(existingOrder, "data");
   return {
     success: true,
     message: `customer order status track successfully`,
@@ -4588,10 +4590,10 @@ var getAdminDashboardStats = async () => {
       prisma.meal.count(),
       prisma.user.count(),
       prisma.order.count(),
-      prisma.review.count()
-      // prisma.payment.count(),
+      prisma.review.count(),
+      prisma.payment.count()
     ]);
-    const [mealsCount, userCount, orderCount, reviewCount] = counts;
+    const [mealsCount, userCount, orderCount, reviewCount, paymentCount] = counts;
     const [approvedmeals, pendingmeals, rejectedmeals] = await Promise.all([
       prisma.meal.count({ where: { status: "APPROVED" } }),
       prisma.meal.count({ where: { status: "PENDING" } }),
@@ -4628,7 +4630,8 @@ var getAdminDashboardStats = async () => {
         mealsCount,
         orderCount,
         reviewCount,
-        userCount
+        userCount,
+        paymentCount
       },
       totalRevenue,
       monthlyRevenue: barChartData,
@@ -4653,70 +4656,73 @@ var getAdminDashboardStats = async () => {
 };
 var getProviderDashboardStats = async (userId) => {
   try {
+    const provider = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true }
+    });
+    if (!provider) {
+      throw new Error("Provider not found");
+    }
     const counts = await prisma.$transaction([
       prisma.meal.count({
-        where: {
-          provider: {
-            userId
-          }
-        }
+        where: { provider: { userId } }
       }),
       prisma.order.count({
-        where: {
-          provider: {
-            userId
-          }
-        }
+        where: { provider: { userId } }
       })
     ]);
     const [mealsCount, orderCount] = counts;
     const [approvedmeals, pendingmeals, rejectedmeals] = await Promise.all([
-      prisma.meal.count({ where: { provider: {
-        userId
-      }, status: "APPROVED" } }),
-      prisma.meal.count({ where: { provider: {
-        userId
-      }, status: "PENDING" } }),
-      prisma.meal.count({ where: { provider: {
-        userId
-      }, status: "REJECTED" } })
+      prisma.meal.count({ where: { provider: { userId }, status: "APPROVED" } }),
+      prisma.meal.count({ where: { provider: { userId }, status: "PENDING" } }),
+      prisma.meal.count({ where: { provider: { userId }, status: "REJECTED" } })
     ]);
     const [cancelledorder, deliveredorder, placedorder, preparingorder, readyorder] = await Promise.all([
-      prisma.order.count({ where: { provider: {
-        userId
-      }, status: "CANCELLED" } }),
-      prisma.order.count({ where: { provider: {
-        userId
-      }, status: "DELIVERED" } }),
-      prisma.order.count({ where: { provider: {
-        userId
-      }, status: "PLACED" } }),
-      prisma.order.count({ where: { provider: {
-        userId
-      }, status: "PREPARING" } }),
-      prisma.order.count({ where: { provider: {
-        userId
-      }, status: "READY" } })
+      prisma.order.count({ where: { provider: { userId }, status: "CANCELLED" } }),
+      prisma.order.count({ where: { provider: { userId }, status: "DELIVERED" } }),
+      prisma.order.count({ where: { provider: { userId }, status: "PLACED" } }),
+      prisma.order.count({ where: { provider: { userId }, status: "PREPARING" } }),
+      prisma.order.count({ where: { provider: { userId }, status: "READY" } })
     ]);
-    const revenueResult = await prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: { userId, status: PaymentStatus.PAID }
+    const providerOrders = await prisma.order.findMany({
+      where: {
+        provider: { userId }
+      },
+      select: { id: true }
     });
-    const totalRevenue = revenueResult._sum.amount ?? 0;
-    const payments = await prisma.payment.findMany({
-      where: { userId, status: PaymentStatus.PAID },
-      select: { amount: true, createdAt: true }
-    });
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthlyRevenue = {};
-    payments.forEach((payment) => {
-      const month = payment.createdAt.getMonth();
-      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + Number(payment.amount);
-    });
-    const barChartData = monthNames.map((month, idx) => ({
-      month,
-      revenue: monthlyRevenue[idx] ?? 0
-    }));
+    const orderIds = providerOrders.map((order) => order.id);
+    let totalRevenue = 0;
+    let barChartData = [];
+    if (orderIds.length > 0) {
+      const revenueResult = await prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: {
+          orderId: { in: orderIds },
+          status: PaymentStatus.PAID
+        }
+      });
+      totalRevenue = revenueResult._sum.amount ?? 0;
+      const payments = await prisma.payment.findMany({
+        where: {
+          orderId: { in: orderIds },
+          status: PaymentStatus.PAID
+        },
+        select: { amount: true, createdAt: true }
+      });
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthlyRevenue = {};
+      payments.forEach((payment) => {
+        const month = payment.createdAt.getMonth();
+        monthlyRevenue[month] = (monthlyRevenue[month] || 0) + Number(payment.amount);
+      });
+      barChartData = monthNames.map((month, idx) => ({
+        month,
+        revenue: monthlyRevenue[idx] ?? 0
+      }));
+    } else {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      barChartData = monthNames.map((month) => ({ month, revenue: 0 }));
+    }
     return {
       counts: {
         mealsCount,
@@ -4738,8 +4744,8 @@ var getProviderDashboardStats = async (userId) => {
       }
     };
   } catch (error) {
-    console.error("Failed to fetch user dashboard stats:", error);
-    throw new Error("Could not fetch user dashboard stats");
+    console.error("Failed to fetch provider dashboard stats:", error);
+    throw new Error("Could not fetch provider dashboard stats");
   }
 };
 var statsService = { getDashboardStatsData };
