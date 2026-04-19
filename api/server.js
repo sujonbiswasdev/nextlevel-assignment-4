@@ -2196,7 +2196,7 @@ var createProvider2 = catchAsync(
 var gelAllprovider = catchAsync(
   async (req, res) => {
     const { search } = req.query;
-    const isActive = req.query.isAvailable ? req.query.isActive === "true" ? true : req.query.isActive == "false" ? false : void 0 : void 0;
+    const isActive = req.query.isActive ? req.query.isActive === "true" ? true : req.query.isActive == "false" ? false : void 0 : void 0;
     const { page, limit, skip, sortBy, sortOrder } = paginationHelping_default(req.query);
     const result = await providerService.getAllProvider(req.query, isActive, page, limit, skip, sortBy, sortOrder, search);
     sendResponse(res, {
