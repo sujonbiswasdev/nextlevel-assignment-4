@@ -10,9 +10,6 @@
 - Backend Repo     :https://github.com/sujonbiswasdev/backend-next-level-assignment-4.git
 - Frontend Live    : https://frontend-next-level-assingment-4.vercel.app
 - Backend Live     : https://backend-next-level-assignment-4.vercel.app
-- Demo Video       : https://drive.google.com/drive/folders/1OlXOn8p__VwGwfoy36joEvXE1_1ov69p?usp=sharing
-- Admin Email      : admin123@gmail.com
-- Admin Password   : Admin123!@#
 
 
 

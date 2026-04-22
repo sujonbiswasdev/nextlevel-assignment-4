@@ -116,6 +116,7 @@ const SingleCategory = async (id: string) => {
       meals: {
         include: {
           reviews: true,
+          provider:{include:{user:true}}
         },
       },
       user: true,

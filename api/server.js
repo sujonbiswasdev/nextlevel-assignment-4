@@ -3180,7 +3180,8 @@ var SingleCategory = async (id) => {
     include: {
       meals: {
         include: {
-          reviews: true
+          reviews: true,
+          provider: { include: { user: true } }
         }
       },
       user: true
